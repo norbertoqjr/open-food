@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import type { ProductSummary, SearchQuery, SearchResult } from '@open-food/shared';
+import type {
+  Locale, ProductSummary, SearchQuery, SearchResult,
+} from '@open-food/shared';
 import { OpenFoodFactsService } from '../open-food-facts/open-food-facts.service.js';
 import { RecentSearchesService } from '../recent-searches/recent-searches.service.js';
 import { DemoUserService } from '../users/demo-user.service.js';
@@ -15,7 +17,7 @@ export class ProductsService {
   async search({
     query, page, pageSize, locale,
   }: SearchQuery): Promise<SearchResult> {
-    const { items, total } = await this.openFoodFacts.search(query, page, pageSize);
+    const { items, total } = await this.openFoodFacts.search(query, page, pageSize, locale);
 
     const demoUser = await this.demoUser.getDemoUser();
     await this.recentSearches.record(demoUser.id, query, locale);
@@ -25,8 +27,8 @@ export class ProductsService {
     };
   }
 
-  async getProduct(id: string): Promise<ProductSummary> {
-    const product = await this.openFoodFacts.getProduct(id);
+  async getProduct(id: string, locale: Locale): Promise<ProductSummary> {
+    const product = await this.openFoodFacts.getProduct(id, locale);
 
     if (!product) {
       throw new NotFoundException(`No product found for "${id}".`);

@@ -1,5 +1,5 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
-import type { ProductSummary } from '@open-food/shared';
+import type { Locale, ProductSummary } from '@open-food/shared';
 
 // Legacy full-text search (world.openfoodfacts.org/api/v2/search) is
 // deprecated and frequently 503s; Search-a-licious is the current search
@@ -9,12 +9,23 @@ const SEARCH_BASE_URL = 'https://search.openfoodfacts.org';
 const PRODUCT_BASE_URL = 'https://world.openfoodfacts.org';
 const USER_AGENT = 'OpenFood/1.0 (open-food-technical-assignment)';
 const REQUEST_TIMEOUT_MS = 5000;
-const SEARCH_FIELDS = 'code,product_name,brands,image_url';
-const PRODUCT_FIELDS = 'code,product_name,brands,image_url';
+const BASE_FIELDS = ['code', 'brands', 'image_url'];
 
-interface UpstreamHit {
-  code?: string;
+// Open Food Facts names a per-language field product_name_<lc> alongside
+// the generic product_name (itself usually the original submitter's
+// language, not necessarily English). Confirmed live: a product can carry
+// product_name_de/fr/nl while product_name_en is wrong or absent, so English
+// is a fallback rung, never the first choice.
+interface LocalizedNameFields {
   product_name?: string;
+  product_name_en?: string;
+  product_name_nl?: string;
+  product_name_de?: string;
+  product_name_fr?: string;
+}
+
+interface UpstreamHit extends LocalizedNameFields {
+  code?: string;
   brands?: string[];
   image_url?: string;
 }
@@ -24,9 +35,8 @@ interface SearchAliciousResponse {
   count: number;
 }
 
-interface UpstreamProduct {
+interface UpstreamProduct extends LocalizedNameFields {
   code?: string;
-  product_name?: string;
   brands?: string;
   image_url?: string;
 }
@@ -41,16 +51,46 @@ export interface SearchOutcome {
   total: number;
 }
 
+function nameFieldsFor(locale: Locale): string[] {
+  const names = new Set(['product_name', 'product_name_en', `product_name_${locale}`]);
+  return [...names];
+}
+
+// Never fabricates a translation: picks among the actual values Open Food
+// Facts already has, preferring the requested locale, then the generic
+// field, then English. A caller with no matching value gets null and shows
+// its own translated "name unavailable" label.
+function resolveLocalizedName(record: LocalizedNameFields, locale: Locale): string | null {
+  const byLocale: Record<Locale, string | undefined> = {
+    en: record.product_name_en,
+    nl: record.product_name_nl,
+    de: record.product_name_de,
+    fr: record.product_name_fr,
+  };
+
+  return (
+    byLocale[locale]?.trim()
+    || record.product_name?.trim()
+    || record.product_name_en?.trim()
+    || null
+  );
+}
+
 @Injectable()
 export class OpenFoodFactsService {
   private readonly logger = new Logger(OpenFoodFactsService.name);
 
-  async search(query: string, page: number, pageSize: number): Promise<SearchOutcome> {
+  async search(
+    query: string,
+    page: number,
+    pageSize: number,
+    locale: Locale,
+  ): Promise<SearchOutcome> {
     const url = new URL('/search', SEARCH_BASE_URL);
     url.searchParams.set('q', query);
     url.searchParams.set('page', String(page));
     url.searchParams.set('page_size', String(pageSize));
-    url.searchParams.set('fields', SEARCH_FIELDS);
+    url.searchParams.set('fields', [...BASE_FIELDS, ...nameFieldsFor(locale)].join(','));
 
     const data = await this.fetchJson<SearchAliciousResponse>(url);
 
@@ -59,7 +99,7 @@ export class OpenFoodFactsService {
         .filter((hit): hit is UpstreamHit & { code: string } => Boolean(hit.code))
         .map((hit) => ({
           id: hit.code,
-          name: hit.product_name?.trim() || null,
+          name: resolveLocalizedName(hit, locale),
           brand: hit.brands?.length ? hit.brands.join(', ') : null,
           imageUrl: hit.image_url?.trim() || null,
         })),
@@ -67,9 +107,9 @@ export class OpenFoodFactsService {
     };
   }
 
-  async getProduct(code: string): Promise<ProductSummary | null> {
+  async getProduct(code: string, locale: Locale): Promise<ProductSummary | null> {
     const url = new URL(`/api/v2/product/${encodeURIComponent(code)}.json`, PRODUCT_BASE_URL);
-    url.searchParams.set('fields', PRODUCT_FIELDS);
+    url.searchParams.set('fields', [...BASE_FIELDS, ...nameFieldsFor(locale)].join(','));
 
     const data = await this.fetchJson<ProductOpenerResponse>(url);
 
@@ -79,7 +119,7 @@ export class OpenFoodFactsService {
 
     return {
       id: data.product.code,
-      name: data.product.product_name?.trim() || null,
+      name: resolveLocalizedName(data.product, locale),
       brand: data.product.brands?.trim() || null,
       imageUrl: data.product.image_url?.trim() || null,
     };

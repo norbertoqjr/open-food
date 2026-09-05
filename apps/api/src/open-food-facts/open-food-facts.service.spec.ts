@@ -30,7 +30,7 @@ describe('OpenFoodFactsService', () => {
         count: 1,
       }));
 
-      const result = await service.search('x', 1, 10);
+      const result = await service.search('x', 1, 10, 'en');
 
       expect(result).toEqual({
         items: [{
@@ -46,7 +46,7 @@ describe('OpenFoodFactsService', () => {
         count: 1,
       }));
 
-      const result = await service.search('x', 1, 10);
+      const result = await service.search('x', 1, 10, 'en');
 
       expect(result.items[0]?.brand).toBe('Ferrero, Nutella');
     });
@@ -57,7 +57,7 @@ describe('OpenFoodFactsService', () => {
         count: 2,
       }));
 
-      const result = await service.search('x', 1, 10);
+      const result = await service.search('x', 1, 10, 'en');
 
       expect(result.items).toHaveLength(1);
       expect(result.items[0]?.id).toBe('123');
@@ -66,7 +66,7 @@ describe('OpenFoodFactsService', () => {
     it('returns an empty result for no matches rather than an error', async () => {
       fetchMock.mockResolvedValueOnce(jsonResponse({ hits: [], count: 0 }));
 
-      const result = await service.search('zzzz', 1, 10);
+      const result = await service.search('zzzz', 1, 10, 'en');
 
       expect(result).toEqual({ items: [], total: 0 });
     });
@@ -74,13 +74,13 @@ describe('OpenFoodFactsService', () => {
     it('turns upstream failure into a controlled 503, not a leaked error', async () => {
       fetchMock.mockRejectedValueOnce(new Error('network down'));
 
-      await expect(service.search('x', 1, 10)).rejects.toThrow(ServiceUnavailableException);
+      await expect(service.search('x', 1, 10, 'en')).rejects.toThrow(ServiceUnavailableException);
     });
 
     it('turns a non-OK upstream status into the same controlled 503', async () => {
       fetchMock.mockResolvedValueOnce(jsonResponse({}, false, 500));
 
-      await expect(service.search('x', 1, 10)).rejects.toThrow(ServiceUnavailableException);
+      await expect(service.search('x', 1, 10, 'en')).rejects.toThrow(ServiceUnavailableException);
     });
   });
 
@@ -88,7 +88,7 @@ describe('OpenFoodFactsService', () => {
     it('returns null when Open Food Facts reports the product missing', async () => {
       fetchMock.mockResolvedValueOnce(jsonResponse({ status: 0 }));
 
-      expect(await service.getProduct('0000000000000')).toBeNull();
+      expect(await service.getProduct('0000000000000', 'en')).toBeNull();
     });
 
     it('maps a found product to the public fields only', async () => {
@@ -99,9 +99,41 @@ describe('OpenFoodFactsService', () => {
         },
       }));
 
-      expect(await service.getProduct('123')).toEqual({
+      expect(await service.getProduct('123', 'en')).toEqual({
         id: '123', name: 'Test', brand: 'Acme', imageUrl: 'https://img',
       });
+    });
+
+    it('prefers the requested locale over the generic and English names', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({
+        status: 1,
+        product: {
+          code: '123',
+          product_name: 'Nutella',
+          product_name_en: 'blueberry jam',
+          product_name_fr: 'Nutella FR',
+        },
+      }));
+
+      const result = await service.getProduct('123', 'fr');
+
+      expect(result?.name).toBe('Nutella FR');
+    });
+
+    it('falls back to the generic name, then English, when the locale is missing', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({
+        status: 1,
+        product: { code: '123', product_name_en: 'blueberry jam' },
+      }));
+
+      expect((await service.getProduct('123', 'fr'))?.name).toBe('blueberry jam');
+
+      fetchMock.mockResolvedValueOnce(jsonResponse({
+        status: 1,
+        product: { code: '123' },
+      }));
+
+      expect((await service.getProduct('123', 'fr'))?.name).toBeNull();
     });
   });
 });
