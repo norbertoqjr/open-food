@@ -52,4 +52,3 @@ One shared demo user, with no registration or full authentication flow. A single
 
 - [Technical assignment](docs/open-food-technical-assignment.pdf) — source requirements
 - [Build plan](docs/build-plan.md) — architecture decisions and implementation sequence
-- [Agent skills](.agents/skills/) — [Zod and React Hook Form](.agents/skills/zod-react-hook-form/SKILL.md), [shadcn/ui](.agents/skills/shadcn-nextjs/SKILL.md)
