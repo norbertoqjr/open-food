@@ -8,16 +8,24 @@ import {
 import { ProductCard } from '@/components/product-card';
 import { RecentSearchesList } from '@/components/recent-searches-list';
 import { SearchForm } from '@/components/search-form';
+import { SearchPagination } from '@/components/search-pagination';
 import { SubscribeBanner } from '@/components/subscribe-banner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatNumber } from '@/lib/format-number';
 import { ApiError, getRecentSearches, searchProducts } from '@/lib/api';
 import { useLocale } from '@/lib/locale-context';
+import { DEFAULT_PAGE, buildSearchHref, parsePage } from '@/lib/search-url';
 
 type SearchState = { status: 'idle' }
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'success'; items: ProductSummary[]; total: number };
+  | {
+    status: 'success';
+    items: ProductSummary[];
+    total: number;
+    page: number;
+    pageSize: number;
+  };
 
 // The active search lives in the URL (/?q=…) rather than in component state,
 // so it survives a reload, restores on back/forward, and can be linked to.
@@ -28,17 +36,29 @@ function HomeSearch() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const query = searchParams.get('q')?.trim() ?? '';
+  const page = parsePage(searchParams.get('page'));
 
   const { locale, t } = useLocale();
   const [state, setState] = useState<SearchState>({ status: 'idle' });
   const [recentSearches, setRecentSearches] = useState<RecentSearchItem[]>([]);
 
+  // A new search always starts at page 1: keeping the old page number would
+  // land the user in the middle of a result set they have not seen.
   const handleSearch = useCallback((nextQuery: string) => {
     const trimmed = nextQuery.trim();
     // replace, not push: a search is a refinement of the current view, so it
     // should not bury the previous query in the back stack.
-    router.replace(trimmed ? `/?q=${encodeURIComponent(trimmed)}` : '/', { scroll: false });
+    router.replace(buildSearchHref(trimmed, DEFAULT_PAGE), { scroll: false });
   }, [router]);
+
+  // push, unlike a search: moving between pages is real navigation, so Back
+  // should return to the page you came from.
+  const handlePageChange = useCallback((nextPage: number) => {
+    router.push(buildSearchHref(query, nextPage), { scroll: false });
+    // The grid is replaced wholesale below the fold; without this the user
+    // stays scrolled at the old page's results.
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [router, query]);
 
   useEffect(() => {
     getRecentSearches()
@@ -58,10 +78,16 @@ function HomeSearch() {
     let cancelled = false;
     setState({ status: 'loading' });
 
-    searchProducts(query, locale)
+    searchProducts(query, locale, page)
       .then(async (result) => {
         if (cancelled) return;
-        setState({ status: 'success', items: result.items, total: result.total });
+        setState({
+          status: 'success',
+          items: result.items,
+          total: result.total,
+          page: result.page,
+          pageSize: result.pageSize,
+        });
         setRecentSearches(await getRecentSearches());
       })
       .catch((error: unknown) => {
@@ -73,7 +99,7 @@ function HomeSearch() {
     return () => {
       cancelled = true;
     };
-  }, [query, locale, t.searchFailedError]);
+  }, [query, page, locale, t.searchFailedError]);
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
@@ -142,9 +168,20 @@ function HomeSearch() {
               </p>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
                 {state.items.map((item) => (
-                  <ProductCard key={item.id} {...item} searchQuery={query} />
+                  <ProductCard
+                    key={item.id}
+                    {...item}
+                    searchQuery={query}
+                    searchPage={state.page}
+                  />
                 ))}
               </div>
+              <SearchPagination
+                page={state.page}
+                pageSize={state.pageSize}
+                total={state.total}
+                onPageChange={handlePageChange}
+              />
             </div>
           ) : null}
         </div>

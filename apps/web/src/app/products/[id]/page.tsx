@@ -13,6 +13,7 @@ import { ProductDetails } from '@/components/product-details';
 import { SubscribePrompt } from '@/components/subscribe-prompt';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLocale } from '@/lib/locale-context';
+import { buildSearchHref, parsePage } from '@/lib/search-url';
 import {
   ApiError, getNutrition, getProduct, getSubscriptionStatus,
 } from '@/lib/api';
@@ -27,14 +28,16 @@ type NutritionState = { status: 'checking' }
   | { status: 'unavailable' }
   | { status: 'unlocked'; nutrition: NutritionInfo };
 
-// Returns to the search the user arrived from (carried in ?q=), or to a bare
-// home page when they landed on this product directly.
+// Returns to the search the user arrived from -- the same query and the same
+// page of results, both carried in the URL -- or to a bare home page when
+// they landed on this product directly.
 function BackToSearchLink({ label }: { label: string }) {
-  const searchQuery = useSearchParams().get('q')?.trim() ?? '';
+  const params = useSearchParams();
+  const searchQuery = params.get('q')?.trim() ?? '';
 
   return (
     <Link
-      href={searchQuery ? `/?q=${encodeURIComponent(searchQuery)}` : '/'}
+      href={buildSearchHref(searchQuery, parsePage(params.get('page')))}
       className={[
         'inline-flex items-center gap-1.5 rounded-sm text-sm text-muted-foreground',
         'transition-colors hover:text-foreground focus-visible:outline-none',

@@ -18,6 +18,10 @@ export const fr = {
   noImageAvailable: 'Aucune image disponible',
   noResultsFor: (query: string) => `Aucun résultat pour « ${query} ».`,
   resultsCount: (formattedTotal: string) => `${formattedTotal} résultats`,
+  paginationLabel: 'Pages de résultats',
+  previousPage: 'Précédent',
+  nextPage: 'Suivant',
+  pageOf: (current: string, total: string) => `Page ${current} sur ${total}`,
   subscribePrompt: 'Abonnez-vous pour voir les informations nutritionnelles de ce produit.',
   subscribeGlobalTitle: 'Débloquer les valeurs nutritionnelles',
   subscribeGlobalPrompt: (

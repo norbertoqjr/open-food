@@ -4,20 +4,23 @@ import type { ProductSummary } from '@open-food/shared';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useLocale } from '@/lib/locale-context';
+import { buildSearchQuery } from '@/lib/search-url';
 
 interface ProductCardProps extends ProductSummary {
   // Carried into the product URL so its back link can return to this exact
-  // search rather than dumping the user on an empty home page. Empty string
-  // when the card is not shown as part of a search result.
+  // search -- and the exact page of it -- rather than dumping the user on an
+  // empty home page or back at the first page. Empty string when the card is
+  // not shown as part of a search result.
   searchQuery: string;
+  searchPage: number;
 }
 
 export function ProductCard({
-  id, name, brand, imageUrl, searchQuery,
+  id, name, brand, imageUrl, searchQuery, searchPage,
 }: ProductCardProps) {
   const { t } = useLocale();
   const href = `/products/${encodeURIComponent(id)}${
-    searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : ''
+    searchQuery ? `?${buildSearchQuery(searchQuery, searchPage)}` : ''
   }`;
 
   return (
