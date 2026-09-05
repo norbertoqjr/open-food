@@ -82,6 +82,12 @@ export function getSubscriptionStatus(): Promise<SubscriptionStatusResponse> {
   return apiFetch<SubscriptionStatusResponse>('/billing/subscription-status');
 }
 
-export function createCheckoutSession(): Promise<CheckoutSessionResponse> {
-  return apiFetch<CheckoutSessionResponse>('/billing/checkout-session', { method: 'POST' });
+// returnTo is where the user should land once Stripe hands them back. The API
+// re-validates it as a same-origin relative path before it reaches a redirect.
+export function createCheckoutSession(returnTo?: string): Promise<CheckoutSessionResponse> {
+  return apiFetch<CheckoutSessionResponse>('/billing/checkout-session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(returnTo ? { returnTo } : {}),
+  });
 }

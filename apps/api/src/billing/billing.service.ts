@@ -1,5 +1,7 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
-import { BILLING_NOT_CONFIGURED, type CheckoutSessionResponse } from '@open-food/shared';
+import {
+  BILLING_NOT_CONFIGURED, isSafeReturnPath, type CheckoutSessionResponse,
+} from '@open-food/shared';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { StripeService } from '../stripe/stripe.service.js';
 import { DemoUserService } from '../users/demo-user.service.js';
@@ -12,6 +14,20 @@ function isAuthenticationError(error: unknown): boolean {
     && (error as { type?: string }).type === 'StripeAuthenticationError';
 }
 
+// Carries where to send the user after Stripe hands them back. Re-validated
+// here rather than trusted from the request: this value ends up in a URL the
+// browser is redirected to, so a scheme or protocol-relative path slipping
+// through would be an open redirect.
+function withReturnPath(baseUrl: string, returnTo: string | undefined): string {
+  if (!returnTo || !isSafeReturnPath(returnTo)) {
+    return baseUrl;
+  }
+
+  const url = new URL(baseUrl);
+  url.searchParams.set('next', returnTo);
+  return url.toString();
+}
+
 @Injectable()
 export class BillingService {
   private readonly logger = new Logger(BillingService.name);
@@ -22,7 +38,7 @@ export class BillingService {
     private readonly demoUser: DemoUserService,
   ) {}
 
-  async createCheckoutSession(): Promise<CheckoutSessionResponse> {
+  async createCheckoutSession(returnTo?: string): Promise<CheckoutSessionResponse> {
     const user = await this.demoUser.getDemoUser();
 
     try {
@@ -32,8 +48,8 @@ export class BillingService {
         mode: 'subscription',
         customer: customerId,
         line_items: [{ price: this.stripe.monthlyPriceId, quantity: 1 }],
-        success_url: this.stripe.checkoutSuccessUrl,
-        cancel_url: this.stripe.checkoutCancelUrl,
+        success_url: withReturnPath(this.stripe.checkoutSuccessUrl, returnTo),
+        cancel_url: withReturnPath(this.stripe.checkoutCancelUrl, returnTo),
       });
 
       if (!session.url) {

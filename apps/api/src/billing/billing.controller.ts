@@ -1,9 +1,13 @@
 import {
-  BadRequestException, Controller, Get, Headers, HttpCode, Post, Req,
+  BadRequestException, Body, Controller, Get, Headers, HttpCode, Post, Req,
 } from '@nestjs/common';
 import type { RawBodyRequest } from '@nestjs/common';
-import type { CheckoutSessionResponse, SubscriptionStatusResponse } from '@open-food/shared';
+import { checkoutSessionBodySchema } from '@open-food/shared';
+import type {
+  CheckoutSessionBody, CheckoutSessionResponse, SubscriptionStatusResponse,
+} from '@open-food/shared';
 import type { Request } from 'express';
+import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { StripeService } from '../stripe/stripe.service.js';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service.js';
 import { DemoUserService } from '../users/demo-user.service.js';
@@ -18,9 +22,14 @@ export class BillingController {
     private readonly demoUser: DemoUserService,
   ) {}
 
+  // The body is optional: a client with nowhere particular to return to can
+  // post nothing and get the configured default redirect.
   @Post('checkout-session')
-  createCheckoutSession(): Promise<CheckoutSessionResponse> {
-    return this.billing.createCheckoutSession();
+  createCheckoutSession(
+    @Body(new ZodValidationPipe(checkoutSessionBodySchema))
+    { returnTo }: CheckoutSessionBody,
+  ): Promise<CheckoutSessionResponse> {
+    return this.billing.createCheckoutSession(returnTo);
   }
 
   @Get('subscription-status')
