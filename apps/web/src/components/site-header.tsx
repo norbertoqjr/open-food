@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { CurrentUser } from '@/components/current-user';
 import { LocaleSelector } from '@/components/locale-selector';
@@ -25,18 +26,22 @@ export function SiteHeader() {
         <Link
           href="/"
           aria-label={t.appTitle}
-          className="flex shrink-0 items-center gap-2.5 rounded-sm"
+          className="flex shrink-0 items-center rounded-sm"
         >
-          <span
-            aria-hidden
-            className={[
-              'grid size-8 place-items-center rounded-full bg-brand',
-              'text-sm font-bold text-on-brand',
-            ].join(' ')}
-          >
-            O
-          </span>
-          <span className="text-base font-semibold tracking-tight">{t.appTitle}</span>
+          {/* The lockup already spells out "Open Food", so the wordmark that
+              used to sit beside the mark would now read twice. The name stays
+              available to assistive tech through the link's aria-label, which
+              leaves this image decorative. Rendered at its display size rather
+              than its 2018px intrinsic width so the generated srcset tops out
+              at a sensible 2x. */}
+          <Image
+            src="/open-food-logo.png"
+            alt=""
+            width={141}
+            height={32}
+            priority
+            className="h-8 w-auto"
+          />
         </Link>
 
         {/* Allowed to wrap: German and French labels are long enough to
