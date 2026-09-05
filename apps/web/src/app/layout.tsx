@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { SiteHeader } from '@/components/site-header';
 import { LocaleProvider } from '@/lib/locale-context';
+import { SubscriptionProvider } from '@/lib/subscription-context';
 import './globals.css';
 
 const geistSans = Geist({
@@ -27,8 +28,10 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
     >
       <body className="min-h-full flex flex-col">
         <LocaleProvider>
-          <SiteHeader />
-          {children}
+          <SubscriptionProvider>
+            <SiteHeader />
+            {children}
+          </SubscriptionProvider>
         </LocaleProvider>
       </body>
     </html>
