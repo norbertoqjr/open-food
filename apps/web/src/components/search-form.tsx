@@ -82,7 +82,10 @@ export function SearchForm({ query, onSearch, isSearching }: SearchFormProps) {
           aria-invalid={Boolean(errors.query)}
           aria-describedby={errors.query ? 'search-query-error' : undefined}
           className={[
-            'min-w-0 flex-1 bg-transparent text-base text-foreground outline-none',
+            // self-stretch so the field fills the pill it sits in: the input's
+            // own line box is 24px tall, so a thumb landing in the pill's
+            // padding used to hit the wrapper and focus nothing.
+            'min-w-0 flex-1 self-stretch bg-transparent text-base text-foreground outline-none',
             'placeholder:text-muted-foreground',
           ].join(' ')}
           {...register('query')}

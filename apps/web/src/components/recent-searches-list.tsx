@@ -39,10 +39,21 @@ export function RecentSearchesList({ items, onSelect }: RecentSearchesListProps)
       <p className="type-caption font-medium text-muted-foreground">{t.recentSearchesLabel}</p>
       {/* Wraps rather than scrolls: a horizontal scroller would hide terms
           on exactly the narrow viewports where the list matters most. */}
-      <ul className="flex flex-wrap gap-2">
+      {/* The xs chip is deliberately under the touch minimum (see button.tsx)
+          and stays that way for a mouse. On a coarse pointer it grows to the
+          44px floor instead, with the row gap opening to match so neighbouring
+          chips do not trade mis-taps -- the same set of chips, sized for the
+          hand that is actually pointing at them. */}
+      <ul className="flex flex-wrap gap-2 pointer-coarse:gap-2.5">
         {visible.map((item) => (
           <li key={item.id}>
-            <Button type="button" variant="outline" size="xs" onClick={() => onSelect(item.query)}>
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              className="pointer-coarse:min-h-11 pointer-coarse:px-4"
+              onClick={() => onSelect(item.query)}
+            >
               {item.query}
             </Button>
           </li>

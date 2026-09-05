@@ -44,7 +44,10 @@ export function CurrentUser() {
   if (failed) return null;
 
   if (loading || !user) {
-    return <Skeleton className="h-11 w-36 rounded-full" aria-hidden />;
+    // Sized to what actually resolves at each width -- a 9rem placeholder on a
+    // phone reserved space for a name the narrow header no longer prints, and
+    // the header visibly shrank when the fetch landed.
+    return <Skeleton className="h-11 w-24 rounded-full md:w-36" aria-hidden />;
   }
 
   const { cancelAtPeriodEnd, currentPeriodEnd } = user.subscription;
@@ -92,21 +95,44 @@ export function CurrentUser() {
         )}
       </span>
 
-      <span className="hidden flex-col leading-tight sm:flex">
+      {/*
+        This block used to be `hidden sm:flex`, which contradicted the note
+        below: the badge cannot be the persistent way into checkout if it is
+        absent from every phone. The name and the renewal line still step back
+        on a narrow header, but they step back to sr-only rather than out of
+        the document, so the account announces itself in full at every width.
+
+        They return at md rather than sm because sm was measured wrong: the
+        full name, the renewal date and the restored wordmark together need
+        about 736px in German, so between 640 and 736 the header silently
+        wrapped to a second row -- the exact defect this pass set out to fix.
+      */}
+      <span className="flex flex-col leading-tight">
         <span className="flex items-center gap-1.5 text-sm font-medium">
           <span className="sr-only">
             {t.signedInAs}
             {' '}
           </span>
-          {t.demoUserName}
+          <span className="sr-only md:not-sr-only">{t.demoUserName}</span>
           {/*
             While unsubscribed the badge is the persistent way into checkout
             from any page; once subscribed it is only a status label, so it
             stops being interactive rather than becoming a no-op button.
             Either way it carries a text label, never colour alone.
+
+            Measured, not a device size: with German loaded -- the longest
+            plan label this app ships, "Kostenlos" -- the four header clusters
+            stop sharing one row below 368px, so the badge is what yields
+            there. Little is lost, since checkout is also reached from the
+            homepage banner and the product paywall, and the status still
+            reads aloud through the sibling below. It is dropped rather than
+            made sr-only because an sr-only <button> stays focusable, which
+            would strand keyboard focus on a control nobody can see.
           */}
           {active ? (
-            <span className={`${BADGE} bg-brand-soft text-brand`}>{t.planSubscribed}</span>
+            <span className={`${BADGE} hidden bg-brand-soft text-brand min-[368px]:inline`}>
+              {t.planSubscribed}
+            </span>
           ) : (
             <button
               type="button"
@@ -114,17 +140,28 @@ export function CurrentUser() {
               disabled={state === 'redirecting'}
               className={[
                 BADGE,
-                'cursor-pointer bg-muted text-muted-foreground outline-none',
+                'hidden cursor-pointer bg-muted text-muted-foreground outline-none',
                 'transition-colors duration-[var(--duration-fast)] ease-[var(--ease)]',
                 'hover:bg-primary hover:text-primary-foreground',
                 'disabled:cursor-default disabled:opacity-60',
+                'min-[368px]:inline',
               ].join(' ')}
             >
               {state === 'redirecting' ? t.redirectingToCheckout : t.planFree}
             </button>
           )}
+          <span className="sr-only min-[368px]:hidden">
+            {active ? t.planSubscribed : t.planFree}
+          </span>
         </span>
-        <span className="type-caption tabular-figures text-muted-foreground">{detail}</span>
+        <span
+          className={[
+            'type-caption tabular-figures text-muted-foreground',
+            'sr-only md:not-sr-only md:block',
+          ].join(' ')}
+        >
+          {detail}
+        </span>
       </span>
     </div>
   );

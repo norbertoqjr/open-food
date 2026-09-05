@@ -18,7 +18,14 @@ export function LocaleSelector() {
 
   return (
     <div className="flex items-center gap-2">
-      <label htmlFor={selectId} className="type-caption hidden text-muted-foreground sm:block">
+      {/* sr-only rather than hidden: below sm this label is the select's only
+          accessible name, and `hidden` took it out of the accessibility tree
+          along with the layout, leaving an unlabelled control on exactly the
+          devices that lean hardest on the screen reader. */}
+      <label
+        htmlFor={selectId}
+        className="type-caption sr-only text-muted-foreground sm:not-sr-only sm:block"
+      >
         {t.selectLanguageLabel}
       </label>
       {/* The browser's own arrow sits hard against the right edge, which
@@ -36,7 +43,7 @@ export function LocaleSelector() {
           }}
           className={[
             'min-h-11 w-full cursor-pointer appearance-none rounded-full',
-            'border border-border bg-background py-2 pr-11 pl-5',
+            'border border-border bg-background py-2 pr-10 pl-4 sm:pr-11 sm:pl-5',
             'text-sm font-medium text-foreground outline-none',
             'transition-colors duration-[var(--duration-normal)] ease-[var(--ease)]',
             'hover:bg-muted',
@@ -51,7 +58,7 @@ export function LocaleSelector() {
         <ChevronDown
           aria-hidden
           className={[
-            'pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2',
+            'pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 sm:right-4',
             'text-muted-foreground',
           ].join(' ')}
         />
