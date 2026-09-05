@@ -1,12 +1,29 @@
 'use client';
 
 import { User } from 'lucide-react';
+import Image from 'next/image';
+import { useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLocale } from '@/lib/locale-context';
 import { useSubscription } from '@/lib/subscription-context';
 import { useCheckout } from '@/lib/use-checkout';
 
 const BADGE = 'rounded-full px-2 py-1 text-xs font-semibold';
+
+// Placeholder portraits from https://github.com/mhshariatipour1378/Avatars-Placeholder,
+// whose id route serves a fixed set of faces numbered 0-100.
+const AVATAR_COUNT = 101;
+
+// Keyed on the user id rather than the display name: t.demoUserName is
+// translated, so a name-derived face would change every time the language
+// picker is touched, as if the account had changed with it.
+function avatarUrl(userId: string) {
+  let hash = 0;
+  for (let i = 0; i < userId.length; i += 1) {
+    hash = (hash * 31 + userId.charCodeAt(i)) % AVATAR_COUNT;
+  }
+  return `https://avatarapi.runflare.run/public/${hash}`;
+}
 
 // The app has no sign-in, so this is not a session indicator: it makes the
 // single demo user every request acts as, and the subscription that gates
@@ -17,6 +34,10 @@ export function CurrentUser() {
     user, active, loading, failed,
   } = useSubscription();
   const { start, state } = useCheckout();
+  // The portraits come from a third-party placeholder service, so treat it as
+  // something that can be down: declared above the early returns because it is
+  // a hook, and falls back to the icon this used to draw unconditionally.
+  const [avatarFailed, setAvatarFailed] = useState(false);
 
   // An unreachable API already surfaces as an error on the page itself;
   // repeating it in the header would be noise.
@@ -43,17 +64,32 @@ export function CurrentUser() {
   return (
     <div className="flex items-center gap-2.5" title={`${t.signedInAs} ${user.id}`}>
       {/*
-        An icon rather than initials: "demo-user" yields "DE", which sits next
-        to the language picker and reads as a German locale badge.
+        A portrait rather than initials: "demo-user" yields "DE", which sits
+        next to the language picker and reads as a German locale badge.
+
+        Subscription state moves to a ring because a photo fills the circle
+        the background colour used to carry. It stays a supplement either way
+        -- the badge beside it says "Subscribed" or "Free" in words.
       */}
       <span
         aria-hidden
         className={[
-          'grid size-8 shrink-0 place-items-center rounded-full',
-          active ? 'bg-brand text-on-brand' : 'bg-muted text-muted-foreground',
+          'grid size-8 shrink-0 place-items-center overflow-hidden rounded-full',
+          active ? 'bg-brand text-on-brand ring-2 ring-brand' : 'bg-muted text-muted-foreground',
         ].join(' ')}
       >
-        <User className="size-4" />
+        {avatarFailed ? (
+          <User className="size-4" />
+        ) : (
+          <Image
+            src={avatarUrl(user.id)}
+            alt=""
+            width={32}
+            height={32}
+            className="size-full object-cover"
+            onError={() => setAvatarFailed(true)}
+          />
+        )}
       </span>
 
       <span className="hidden flex-col leading-tight sm:flex">
