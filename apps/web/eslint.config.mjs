@@ -9,10 +9,14 @@ export default [
     // variant-map string on each `shadcn add` isn't worth the churn, and
     // React's own destructured-default-parameter pattern (`size = 'default'`)
     // is not the legacy class-component defaultProps this rule expects.
+    // Label is a generic `<label {...props} />` wrapper — it spreads whatever
+    // `htmlFor` a caller passes, so the association the a11y rule wants
+    // exists at each call site, not in this file.
     files: ['src/components/ui/**/*.tsx'],
     rules: {
       '@stylistic/max-len': 'off',
       'react/require-default-props': 'off',
+      'jsx-a11y/label-has-associated-control': 'off',
     },
   },
 ];
