@@ -2,7 +2,7 @@
 
 A responsive search application for packaged foods, backed by [Open Food Facts](https://world.openfoodfacts.org/). Anyone can browse product names, brands, and images; detailed nutrition is available to a demo user with an active Stripe test-mode subscription. The interface is available in English, Dutch, German, and French.
 
-> **Status: feature-complete on this branch, pending review.** Search, internationalization, and Stripe subscriptions are all implemented and tested (see [Testing](#testing)) — see [Limitations](#limitations) for the one significant gap: no live Stripe test-mode account exists in this environment, so the actual browser checkout flow and live webhook delivery from Stripe are unverified beyond what a placeholder key allows.
+> **Status: feature-complete.** Search, internationalization, and Stripe subscriptions are all implemented and tested (see [Testing](#testing)). Checkout has since been run for real against a Stripe test-mode account: a live Checkout Session, a real subscription, and the resulting entitlement change have all been exercised end to end. See [Limitations](#limitations) for what remains out of scope.
 
 ## Stack
 
@@ -76,6 +76,8 @@ Other useful scripts, runnable from the repo root:
 | `npm run prisma:migrate` | Apply schema changes to the local database |
 | `npm run prisma:seed` | Re-run the demo-user seed (idempotent) |
 
+The app has no registration: every request acts as a single seeded demo user. If that row is missing, the API answers `500` with *"Demo user is missing; run the database seed"* rather than failing obscurely — the fix is always `npm run prisma:seed`. Note that `prisma migrate reset` drops the data but does **not** reliably re-run the seed, so run it yourself afterwards.
+
 ## Internationalization
 
 The selector in the top-right of the search page switches between English, Dutch, German, and French, persisting the choice to `localStorage`. Changing it re-issues the active search and any open product page against the API with the new `locale`, so product names — not just interface labels — update; a product with no name in the selected language falls back through the generic and English fields rather than showing nothing, and never displays a fabricated translation.
@@ -86,11 +88,60 @@ The selector in the top-right of the search page switches between English, Dutch
 
 1. Create a [Stripe test-mode](https://dashboard.stripe.com/test/apikeys) account and copy the test **secret key** into `STRIPE_SECRET_KEY`.
 2. Create one recurring monthly [Price](https://dashboard.stripe.com/test/prices) and put its ID in `STRIPE_MONTHLY_PRICE_ID`.
-3. Run the [Stripe CLI](https://docs.stripe.com/stripe-cli) locally: `stripe listen --forward-to localhost:4000/billing/webhook`. It prints a `whsec_...` value — put that in `STRIPE_WEBHOOK_SECRET`.
+3. Install the Stripe CLI and start forwarding webhooks (see [below](#installing-the-stripe-cli)): `stripe listen --forward-to localhost:4000/billing/webhook`. It prints a `whsec_...` value — put that in `STRIPE_WEBHOOK_SECRET`.
 4. Leave `STRIPE_CHECKOUT_SUCCESS_URL` / `STRIPE_CHECKOUT_CANCEL_URL` pointed at `apps/web`'s `/subscription/success` and `/subscription/cancel` (the defaults already are).
 5. Restart the API, click **Subscribe** on any product page, and complete checkout with a [Stripe test card](https://docs.stripe.com/testing#cards) (`4242 4242 4242 4242`, any future expiry, any CVC).
 
 The success redirect itself grants nothing — only a verified webhook does — so the success page polls entitlement for a few seconds while the webhook (forwarded by the CLI above) is processed.
+
+### Installing the Stripe CLI
+
+Stripe cannot reach `localhost`, so webhook events only arrive if the CLI is running to tunnel them in. **Without it, checkout succeeds and payment is taken, but the app never learns about it and nutrition stays locked** — the most likely cause if a real payment appears to have no effect.
+
+Install it whichever way suits the machine:
+
+```bash
+npm install -g @stripe/cli     # any platform; matches this repo's toolchain
+brew install stripe            # macOS
+```
+
+<details>
+<summary>Debian / Ubuntu via apt</summary>
+
+```bash
+curl -s https://packages.stripe.dev/api/security/keypair/stripe-cli-gpg/public \
+  | gpg --dearmor | sudo tee /usr/share/keyrings/stripe.gpg > /dev/null
+echo "deb [signed-by=/usr/share/keyrings/stripe.gpg] https://packages.stripe.dev/stripe-cli-debian-local stable main" \
+  | sudo tee -a /etc/apt/sources.list.d/stripe.list
+sudo apt update && sudo apt install stripe
+```
+
+</details>
+
+Other platforms, and prebuilt binaries, are listed in the [Stripe CLI readme](https://github.com/stripe/stripe-cli#installation).
+
+Then authenticate once (opens a browser to pair with your Stripe account) and start the listener:
+
+```bash
+stripe login
+stripe listen --forward-to localhost:4000/billing/webhook
+```
+
+Leave that running in its own terminal for as long as you are testing. It prints a webhook signing secret on startup:
+
+```
+> Ready! You are using Stripe API Version [2026-08-27]. Your webhook signing secret is whsec_1a2b3c... (^C to quit)
+```
+
+Copy that `whsec_...` into `STRIPE_WEBHOOK_SECRET` in `apps/api/.env` and **restart the API** — it reads the secret at boot. The value changes each time `stripe listen` starts unless you pass `--api-key`, so re-copy it if you restart the listener.
+
+To check the wiring without paying for anything, trigger an event by hand:
+
+```bash
+stripe trigger customer.subscription.created
+```
+
+The API logs the event and records it in `ProcessedStripeEvent`. A `400` on `/billing/webhook` means the secret in `.env` does not match the one the listener printed.
 
 ## Testing
 
@@ -108,7 +159,8 @@ Stripe secret keys, webhook secrets, and database credentials stay on the backen
 
 ## Limitations
 
-- **No live Stripe test-mode account in this environment.** Webhook processing (signature verification, idempotency, staleness protection, entitlement changes) is verified thoroughly — both by unit tests and by sending genuinely-signed webhook events to the running server — but creating a real Checkout Session requires calling Stripe's actual API, which a placeholder key cannot do. See [Stripe test-mode setup](#stripe-test-mode-setup) to exercise it for real.
+- **Webhook delivery depends on the Stripe CLI running locally.** Stripe cannot reach `localhost`, so without `stripe listen` a completed payment never reaches the app and nutrition stays locked, even though the money moved. That is a property of local development rather than a defect — a deployed instance registers a public webhook endpoint instead — but it is the first thing to check when a real payment appears to have had no effect. See [Installing the Stripe CLI](#installing-the-stripe-cli).
+- **No subscription management.** Cancelling or changing a plan happens in the Stripe dashboard; the app reflects the change when the resulting webhook arrives, but offers no billing portal of its own.
 - One shared demo user, with no registration or full authentication flow.
 - A single monthly subscription price, with no tiers or billing portal.
 - Open Food Facts remains the only product source; there is no catalog import or machine translation of product data.
