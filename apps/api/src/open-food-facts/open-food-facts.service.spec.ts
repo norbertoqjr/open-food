@@ -42,6 +42,8 @@ describe('OpenFoodFactsService', () => {
         hits: [{ code: '123' }],
         count: 1,
       }));
+      // The image backfill runs for the hit with no image and finds none.
+      fetchMock.mockResolvedValueOnce(jsonResponse({ status: 1, product: {} }));
 
       const result = await service.search('x', 1, 10, 'en');
 
@@ -51,6 +53,83 @@ describe('OpenFoodFactsService', () => {
         }],
         total: 1,
       });
+    });
+
+    it('backfills an image the search index is missing but the product API has', async () => {
+      // Real gap: Search-a-licious carries no image data at all for some
+      // products whose detail page shows a photo.
+      fetchMock.mockResolvedValueOnce(jsonResponse({
+        hits: [
+          { code: 'has-image', image_url: 'https://img/a.jpg' },
+          { code: 'no-image' },
+        ],
+        count: 2,
+      }));
+      fetchMock.mockResolvedValueOnce(jsonResponse({
+        status: 1,
+        product: { image_url: 'https://img/b.jpg' },
+      }));
+
+      const result = await service.search('x', 1, 10, 'en');
+
+      expect(result.items.map((i) => i.imageUrl))
+        .toEqual(['https://img/a.jpg', 'https://img/b.jpg']);
+      // Only the hit that needed one was fetched.
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('makes no extra request when every hit already has an image', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({
+        hits: [{ code: '123', image_url: 'https://img/a.jpg' }],
+        count: 1,
+      }));
+
+      await service.search('x', 1, 10, 'en');
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('asks once per product, then serves the answer from cache', async () => {
+      // Includes "no photo anywhere", which is common: re-asking on every
+      // search made a repeated query pay the round trip again.
+      fetchMock.mockResolvedValueOnce(jsonResponse({ hits: [{ code: '123' }], count: 1 }));
+      fetchMock.mockResolvedValueOnce(jsonResponse({ status: 1, product: {} }));
+      await service.search('x', 1, 10, 'en');
+
+      fetchMock.mockResolvedValueOnce(jsonResponse({ hits: [{ code: '123' }], count: 1 }));
+      const again = await service.search('x', 1, 10, 'en');
+
+      expect(again.items[0].imageUrl).toBeNull();
+      // Two search calls, and only the first backfilled.
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+
+    it('does not cache a failed backfill, so it is retried', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({ hits: [{ code: '123' }], count: 1 }));
+      fetchMock.mockRejectedValueOnce(new Error('network down'));
+      await service.search('x', 1, 10, 'en');
+
+      fetchMock.mockResolvedValueOnce(jsonResponse({ hits: [{ code: '123' }], count: 1 }));
+      fetchMock.mockResolvedValueOnce(jsonResponse({
+        status: 1,
+        product: { image_url: 'https://img/b.jpg' },
+      }));
+
+      const again = await service.search('x', 1, 10, 'en');
+
+      expect(again.items[0].imageUrl).toBe('https://img/b.jpg');
+    });
+
+    it('still returns results when the image backfill fails', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({ hits: [{ code: '123' }], count: 1 }));
+      fetchMock.mockRejectedValueOnce(new Error('network down'));
+
+      const result = await service.search('x', 1, 10, 'en');
+
+      // A missing photo is not worth failing a search over.
+      expect(result.items).toEqual([{
+        id: '123', name: null, brand: null, imageUrl: null,
+      }]);
     });
 
     it('joins multiple upstream brands into one display string', async () => {

@@ -12,6 +12,11 @@ const SEARCH_BASE_URL = 'https://search.openfoodfacts.org';
 const PRODUCT_BASE_URL = 'https://world.openfoodfacts.org';
 const USER_AGENT = 'OpenFood/1.0 (open-food-technical-assignment)';
 const REQUEST_TIMEOUT_MS = 5000;
+// Backfilling images is an enhancement, not the search itself, so it gets a
+// tighter budget and a cap: a slow or unhelpful product API must not hold up
+// results that are otherwise ready.
+const IMAGE_BACKFILL_TIMEOUT_MS = 2500;
+const IMAGE_BACKFILL_LIMIT = 10;
 const BASE_FIELDS = ['code', 'brands', 'image_url'];
 const DETAIL_FIELDS = [
   'quantity', 'serving_size',
@@ -245,6 +250,11 @@ function resolveGenericName(product: UpstreamProduct, locale: Locale): string | 
 export class OpenFoodFactsService {
   private readonly logger = new Logger(OpenFoodFactsService.name);
 
+  // Barcode -> image URL, or null for "asked, and there is none". Memoised
+  // for the life of the process; product photos change rarely enough that a
+  // stale entry costs nothing an eventual restart does not fix.
+  private readonly imageCache = new Map<string, string | null>();
+
   constructor(private readonly taxonomy: TaxonomyService) {}
 
   private async localizeTags(
@@ -281,17 +291,62 @@ export class OpenFoodFactsService {
 
     const data = await this.fetchJson<SearchAliciousResponse>(url);
 
+    const items = (data.hits ?? [])
+      .filter((hit): hit is UpstreamHit & { code: string } => Boolean(hit.code))
+      .map((hit) => ({
+        id: hit.code,
+        name: resolveLocalizedName(hit, locale),
+        brand: hit.brands?.length ? hit.brands.join(', ') : null,
+        imageUrl: hit.image_url?.trim() || null,
+      }));
+
     return {
-      items: (data.hits ?? [])
-        .filter((hit): hit is UpstreamHit & { code: string } => Boolean(hit.code))
-        .map((hit) => ({
-          id: hit.code,
-          name: resolveLocalizedName(hit, locale),
-          brand: hit.brands?.length ? hit.brands.join(', ') : null,
-          imageUrl: hit.image_url?.trim() || null,
-        })),
+      items: await this.backfillMissingImages(items),
       total: data.count ?? 0,
     };
+  }
+
+  // The search index carries no image data at all for some products that the
+  // product API does have a photo for, so a results grid showed "No image"
+  // next to items whose detail page then displayed one. The image URL cannot
+  // be derived from the barcode -- it embeds a revision number -- so the only
+  // way to close the gap is to ask the product API.
+  //
+  // Only for hits that are actually missing one, capped, and issued together.
+  // A failure leaves the placeholder rather than failing the search.
+  private async backfillMissingImages(items: ProductSummary[]): Promise<ProductSummary[]> {
+    const missing = items.filter((item) => !item.imageUrl);
+    if (missing.length === 0) return items;
+
+    // Plenty of products have no photo anywhere, and re-asking on every
+    // search made a repeated query pay the full round trip again -- which is
+    // the common case here, since changing language re-runs the same search.
+    const unknown = missing
+      .filter((item) => !this.imageCache.has(item.id))
+      .slice(0, IMAGE_BACKFILL_LIMIT);
+
+    await Promise.all(unknown.map(async (item) => {
+      const url = new URL(`/api/v2/product/${encodeURIComponent(item.id)}.json`, PRODUCT_BASE_URL);
+      url.searchParams.set('fields', 'image_url');
+
+      const data = await this.fetchJsonOrNull<ProductOpenerResponse>(
+        url,
+        IMAGE_BACKFILL_TIMEOUT_MS,
+      );
+
+      // A null body means the request failed, which says nothing about the
+      // product and must not be cached. A body with no image_url is a real
+      // answer: this product has no photo.
+      if (data) {
+        this.imageCache.set(item.id, data.product?.image_url?.trim() || null);
+      }
+    }));
+
+    return items.map((item) => (
+      item.imageUrl
+        ? item
+        : { ...item, imageUrl: this.imageCache.get(item.id) ?? null }
+    ));
   }
 
   async getProduct(code: string, locale: Locale): Promise<ProductDetail | null> {
@@ -369,6 +424,31 @@ export class OpenFoodFactsService {
       salt: n.salt_100g ?? null,
       nutriScore: gradeOrNull(data.product.nutriscore_grade),
     };
+  }
+
+  // For requests whose result is a nice-to-have: a failure returns null and
+  // is logged at warning level, instead of turning into a 503 the caller
+  // cannot do anything useful with.
+  private async fetchJsonOrNull<T>(url: URL, timeoutMs: number): Promise<T | null> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(url, {
+        headers: { 'User-Agent': USER_AGENT },
+        signal: controller.signal,
+      });
+
+      if (!response.ok) return null;
+
+      return (await response.json()) as T;
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Optional Open Food Facts request failed (${url.pathname}): ${reason}`);
+      return null;
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   private async fetchJson<T>(url: URL): Promise<T> {
