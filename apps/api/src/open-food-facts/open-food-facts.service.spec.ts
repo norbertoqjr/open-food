@@ -136,4 +136,48 @@ describe('OpenFoodFactsService', () => {
       expect((await service.getProduct('123', 'fr'))?.name).toBeNull();
     });
   });
+
+  describe('getNutrition', () => {
+    it('maps the per-100g nutriments fields, defaulting basis to 100g', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({
+        status: 1,
+        product: {
+          code: '123',
+          nutriments: {
+            'energy-kcal_100g': 539,
+            fat_100g: 30.9,
+            'saturated-fat_100g': 10.6,
+            carbohydrates_100g: 57.5,
+            sugars_100g: 56.3,
+            proteins_100g: 6.3,
+            salt_100g: 0.107,
+          },
+        },
+      }));
+
+      expect(await service.getNutrition('123')).toEqual({
+        basis: '100g',
+        energyKcal: 539,
+        fat: 30.9,
+        saturatedFat: 10.6,
+        carbohydrates: 57.5,
+        sugars: 56.3,
+        fiber: null,
+        proteins: 6.3,
+        salt: 0.107,
+      });
+    });
+
+    it('returns null when the product has no nutriments at all', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({ status: 1, product: { code: '123' } }));
+
+      expect(await service.getNutrition('123')).toBeNull();
+    });
+
+    it('returns null for an unknown product', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({ status: 0 }));
+
+      expect(await service.getNutrition('0')).toBeNull();
+    });
+  });
 });

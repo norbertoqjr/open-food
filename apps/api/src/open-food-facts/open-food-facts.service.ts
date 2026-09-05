@@ -1,5 +1,5 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
-import type { Locale, ProductSummary } from '@open-food/shared';
+import type { Locale, NutritionInfo, ProductSummary } from '@open-food/shared';
 
 // Legacy full-text search (world.openfoodfacts.org/api/v2/search) is
 // deprecated and frequently 503s; Search-a-licious is the current search
@@ -49,6 +49,26 @@ interface ProductOpenerResponse {
 export interface SearchOutcome {
   items: ProductSummary[];
   total: number;
+}
+
+interface Nutriments {
+  'energy-kcal_100g'?: number;
+  fat_100g?: number;
+  'saturated-fat_100g'?: number;
+  carbohydrates_100g?: number;
+  sugars_100g?: number;
+  fiber_100g?: number;
+  proteins_100g?: number;
+  salt_100g?: number;
+}
+
+interface NutritionResponse {
+  status: number;
+  product?: {
+    code?: string;
+    nutriments?: Nutriments;
+    nutrition_data_per?: string;
+  };
 }
 
 function nameFieldsFor(locale: Locale): string[] {
@@ -122,6 +142,33 @@ export class OpenFoodFactsService {
       name: resolveLocalizedName(data.product, locale),
       brand: data.product.brands?.trim() || null,
       imageUrl: data.product.image_url?.trim() || null,
+    };
+  }
+
+  // Returns null for a product Open Food Facts knows about but has no
+  // nutrition data for, distinct from getProduct's null (product unknown).
+  async getNutrition(code: string): Promise<NutritionInfo | null> {
+    const url = new URL(`/api/v2/product/${encodeURIComponent(code)}.json`, PRODUCT_BASE_URL);
+    url.searchParams.set('fields', 'code,nutriments,nutrition_data_per');
+
+    const data = await this.fetchJson<NutritionResponse>(url);
+
+    if (data.status !== 1 || !data.product?.nutriments) {
+      return null;
+    }
+
+    const n = data.product.nutriments;
+
+    return {
+      basis: data.product.nutrition_data_per ?? '100g',
+      energyKcal: n['energy-kcal_100g'] ?? null,
+      fat: n.fat_100g ?? null,
+      saturatedFat: n['saturated-fat_100g'] ?? null,
+      carbohydrates: n.carbohydrates_100g ?? null,
+      sugars: n.sugars_100g ?? null,
+      fiber: n.fiber_100g ?? null,
+      proteins: n.proteins_100g ?? null,
+      salt: n.salt_100g ?? null,
     };
   }
 
