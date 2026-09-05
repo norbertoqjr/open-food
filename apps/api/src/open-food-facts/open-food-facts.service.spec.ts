@@ -149,6 +149,37 @@ describe('OpenFoodFactsService', () => {
       expect((await service.getProduct('123', 'en'))?.genericName).toBeNull();
     });
 
+    it('prefers the requested locale for the generic name', async () => {
+      // Shape of a real Hungarian product: the bare field is the submitter's
+      // language, with a usable English translation alongside it.
+      fetchMock.mockResolvedValueOnce(jsonResponse({
+        status: 1,
+        product: {
+          code: '123',
+          product_name_en: 'PORCI Snack - spicy',
+          generic_name: 'Sertesborbol keszult pikans sult snack',
+          generic_name_en: 'Spicy fried snack made of pork rind',
+        },
+      }));
+
+      expect((await service.getProduct('123', 'en'))?.genericName)
+        .toBe('Spicy fried snack made of pork rind');
+    });
+
+    it('omits a generic name that duplicates the name only in the resolved locale', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({
+        status: 1,
+        product: {
+          code: '123',
+          product_name_fr: 'Pate a tartiner',
+          generic_name: 'Hazelnut spread',
+          generic_name_fr: 'Pate a tartiner',
+        },
+      }));
+
+      expect((await service.getProduct('123', 'fr'))?.genericName).toBeNull();
+    });
+
     it('omits a generic name that merely repeats the brand', async () => {
       fetchMock.mockResolvedValueOnce(jsonResponse({
         status: 1,

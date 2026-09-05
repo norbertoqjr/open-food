@@ -13,7 +13,7 @@ const USER_AGENT = 'OpenFood/1.0 (open-food-technical-assignment)';
 const REQUEST_TIMEOUT_MS = 5000;
 const BASE_FIELDS = ['code', 'brands', 'image_url'];
 const DETAIL_FIELDS = [
-  'generic_name', 'quantity', 'serving_size',
+  'quantity', 'serving_size',
   'allergens_tags', 'categories_tags', 'labels_tags', 'countries_tags',
   'nova_group', 'ecoscore_grade',
 ];
@@ -47,6 +47,10 @@ interface UpstreamProduct extends LocalizedNameFields {
   brands?: string;
   image_url?: string;
   generic_name?: string;
+  generic_name_en?: string;
+  generic_name_nl?: string;
+  generic_name_de?: string;
+  generic_name_fr?: string;
   quantity?: string;
   serving_size?: string;
   ingredients_text?: string;
@@ -130,6 +134,11 @@ function ingredientFieldsFor(locale: Locale): string[] {
   return [...fields];
 }
 
+function genericNameFieldsFor(locale: Locale): string[] {
+  const fields = new Set(['generic_name', 'generic_name_en', `generic_name_${locale}`]);
+  return [...fields];
+}
+
 // Same precedence as the product name: the requested locale, then whatever
 // the submitter wrote, then English. Never a machine translation.
 function resolveIngredientsText(product: UpstreamProduct, locale: Locale): string | null {
@@ -168,10 +177,29 @@ function resolveLocalizedName(record: LocalizedNameFields, locale: Locale): stri
   );
 }
 
-// Upstream often repeats the product name or the brand here ("Nutella" as
-// the generic name of Nutella), which would render as a duplicate line.
+// Localized on the same precedence as the product name and ingredients: the
+// requested locale, then whatever the submitter wrote, then English. Without
+// this a Hungarian product renders its Hungarian description to an English
+// reader even though generic_name_en exists.
+//
+// Upstream also often repeats the product name or the brand here ("Nutella"
+// as the generic name of Nutella); that check runs on the resolved value, so
+// it still catches a duplicate that only appears in one language.
 function resolveGenericName(product: UpstreamProduct, locale: Locale): string | null {
-  const generic = product.generic_name?.trim();
+  const byLocale: Record<Locale, string | undefined> = {
+    en: product.generic_name_en,
+    nl: product.generic_name_nl,
+    de: product.generic_name_de,
+    fr: product.generic_name_fr,
+  };
+
+  const generic = (
+    byLocale[locale]?.trim()
+    || product.generic_name?.trim()
+    || product.generic_name_en?.trim()
+    || ''
+  );
+
   if (!generic) return null;
 
   const duplicates = [resolveLocalizedName(product, locale), product.brands?.trim()]
@@ -219,6 +247,7 @@ export class OpenFoodFactsService {
       ...DETAIL_FIELDS,
       ...nameFieldsFor(locale),
       ...ingredientFieldsFor(locale),
+      ...genericNameFieldsFor(locale),
     ].join(','));
 
     const data = await this.fetchJson<ProductOpenerResponse>(url);
