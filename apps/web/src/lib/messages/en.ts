@@ -22,6 +22,7 @@ export const en = {
   subscribeButton: 'Subscribe',
   redirectingToCheckout: 'Redirecting to checkout…',
   checkoutFailedError: 'Could not start checkout. Try again.',
+  billingNotConfiguredError: 'Subscriptions are not set up on this server yet.',
   nutritionTitle: 'Nutrition',
   nutritionBasis: (basis: string) => `Per ${basis}`,
   nutritionUnavailable: 'No nutrition data available for this product.',

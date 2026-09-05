@@ -21,6 +21,7 @@ export const fr = {
   subscribeButton: "S'abonner",
   redirectingToCheckout: 'Redirection vers le paiement…',
   checkoutFailedError: 'Impossible de démarrer le paiement. Réessayez.',
+  billingNotConfiguredError: 'Les abonnements ne sont pas encore configurés sur ce serveur.',
   nutritionTitle: 'Nutrition',
   nutritionBasis: (basis: string) => `Pour ${basis}`,
   nutritionUnavailable: 'Aucune information nutritionnelle disponible pour ce produit.',

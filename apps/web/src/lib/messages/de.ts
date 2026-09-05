@@ -21,6 +21,7 @@ export const de = {
   subscribeButton: 'Abonnieren',
   redirectingToCheckout: 'Weiterleitung zur Kasse…',
   checkoutFailedError: 'Kasse konnte nicht gestartet werden. Bitte erneut versuchen.',
+  billingNotConfiguredError: 'Abonnements sind auf diesem Server noch nicht eingerichtet.',
   nutritionTitle: 'Nährwerte',
   nutritionBasis: (basis: string) => `Pro ${basis}`,
   nutritionUnavailable: 'Keine Nährwerte für dieses Produkt verfügbar.',

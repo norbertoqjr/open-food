@@ -22,3 +22,8 @@ export interface SubscriptionStatusResponse {
 export interface CheckoutSessionResponse {
   url: string;
 }
+
+// Returned as `code` when Stripe rejects our credentials, so the frontend can
+// say "billing isn't set up" instead of "try again" — retrying never fixes a
+// missing or invalid API key. Never carries the key itself.
+export const BILLING_NOT_CONFIGURED = 'billing_not_configured';

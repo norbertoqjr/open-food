@@ -1,13 +1,16 @@
 'use client';
 
+import { BILLING_NOT_CONFIGURED } from '@open-food/shared';
 import { useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ApiError, createCheckoutSession } from '@/lib/api';
 import { useLocale } from '@/lib/locale-context';
 
+type PromptState = 'idle' | 'redirecting' | 'error' | 'not-configured';
+
 export function SubscribePrompt() {
   const { t } = useLocale();
-  const [state, setState] = useState<'idle' | 'redirecting' | 'error'>('idle');
+  const [state, setState] = useState<PromptState>('idle');
 
   const handleSubscribe = useCallback(async () => {
     setState('redirecting');
@@ -15,7 +18,10 @@ export function SubscribePrompt() {
       const { url } = await createCheckoutSession();
       window.location.href = url;
     } catch (error) {
-      setState('error');
+      // An unconfigured server will never succeed on retry, so it gets its
+      // own message rather than the generic "try again".
+      const notConfigured = error instanceof ApiError && error.code === BILLING_NOT_CONFIGURED;
+      setState(notConfigured ? 'not-configured' : 'error');
       const detail = error instanceof ApiError ? error.message : error;
       // The UI shows a translated message; this is for debugging only.
       // eslint-disable-next-line no-console
@@ -37,9 +43,9 @@ export function SubscribePrompt() {
       <Button type="button" onClick={handleSubscribe} disabled={state === 'redirecting'}>
         {state === 'redirecting' ? t.redirectingToCheckout : t.subscribeButton}
       </Button>
-      {state === 'error' ? (
+      {state === 'error' || state === 'not-configured' ? (
         <p role="alert" className="text-sm font-medium text-destructive">
-          {t.checkoutFailedError}
+          {state === 'not-configured' ? t.billingNotConfiguredError : t.checkoutFailedError}
         </p>
       ) : null}
     </div>

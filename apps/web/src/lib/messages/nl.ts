@@ -21,6 +21,7 @@ export const nl = {
   subscribeButton: 'Abonneren',
   redirectingToCheckout: 'Doorverwijzen naar afrekenen…',
   checkoutFailedError: 'Kon afrekenen niet starten. Probeer het opnieuw.',
+  billingNotConfiguredError: 'Abonnementen zijn nog niet ingesteld op deze server.',
   nutritionTitle: 'Voedingswaarden',
   nutritionBasis: (basis: string) => `Per ${basis}`,
   nutritionUnavailable: 'Geen voedingswaarden beschikbaar voor dit product.',

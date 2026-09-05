@@ -14,10 +14,20 @@ export class ApiError extends Error {
 
   readonly fieldErrors?: Record<string, string[]>;
 
-  constructor(message: string, status: number, fieldErrors?: Record<string, string[]>) {
+  // Set when the API identifies the failure precisely enough for the UI to
+  // say something better than "something went wrong" (see BILLING_NOT_CONFIGURED).
+  readonly code?: string;
+
+  constructor(
+    message: string,
+    status: number,
+    fieldErrors?: Record<string, string[]>,
+    code?: string,
+  ) {
     super(message);
     this.status = status;
     this.fieldErrors = fieldErrors;
+    this.code = code;
   }
 }
 
@@ -28,8 +38,14 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     const body = (await response.json().catch(() => null)) as {
       message?: string;
       errors?: Record<string, string[]>;
+      code?: string;
     } | null;
-    throw new ApiError(body?.message ?? 'Something went wrong.', response.status, body?.errors);
+    throw new ApiError(
+      body?.message ?? 'Something went wrong.',
+      response.status,
+      body?.errors,
+      body?.code,
+    );
   }
 
   return response.json() as Promise<T>;
