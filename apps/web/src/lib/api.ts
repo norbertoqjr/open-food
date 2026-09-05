@@ -1,5 +1,11 @@
 import type {
-  Locale, ProductSummary, RecentSearchItem, SearchResult,
+  CheckoutSessionResponse,
+  Locale,
+  NutritionInfo,
+  ProductSummary,
+  RecentSearchItem,
+  SearchResult,
+  SubscriptionStatusResponse,
 } from '@open-food/shared';
 import { env } from './env';
 
@@ -15,8 +21,8 @@ export class ApiError extends Error {
   }
 }
 
-async function apiFetch<T>(path: string): Promise<T> {
-  const response = await fetch(`${env.NEXT_PUBLIC_API_URL}${path}`);
+async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${env.NEXT_PUBLIC_API_URL}${path}`, init);
 
   if (!response.ok) {
     const body = (await response.json().catch(() => null)) as {
@@ -45,4 +51,16 @@ export function getProduct(id: string, locale: Locale): Promise<ProductSummary> 
 
 export function getRecentSearches(): Promise<RecentSearchItem[]> {
   return apiFetch<RecentSearchItem[]>('/recent-searches');
+}
+
+export function getNutrition(id: string): Promise<NutritionInfo> {
+  return apiFetch<NutritionInfo>(`/products/${encodeURIComponent(id)}/nutrition`);
+}
+
+export function getSubscriptionStatus(): Promise<SubscriptionStatusResponse> {
+  return apiFetch<SubscriptionStatusResponse>('/billing/subscription-status');
+}
+
+export function createCheckoutSession(): Promise<CheckoutSessionResponse> {
+  return apiFetch<CheckoutSessionResponse>('/billing/checkout-session', { method: 'POST' });
 }

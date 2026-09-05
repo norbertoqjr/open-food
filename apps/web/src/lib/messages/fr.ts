@@ -16,4 +16,30 @@ export const fr = {
   noImageAvailable: 'Aucune image disponible',
   noResultsFor: (query: string) => `Aucun résultat pour « ${query} ».`,
   resultsCount: (formattedTotal: string) => `${formattedTotal} résultats`,
+  subscribePrompt: 'Abonnez-vous pour voir les informations nutritionnelles de ce produit.',
+  subscribeButton: "S'abonner",
+  redirectingToCheckout: 'Redirection vers le paiement…',
+  checkoutFailedError: 'Impossible de démarrer le paiement. Réessayez.',
+  nutritionTitle: 'Nutrition',
+  nutritionBasis: (basis: string) => `Pour ${basis}`,
+  nutritionUnavailable: 'Aucune information nutritionnelle disponible pour ce produit.',
+  energyLabel: 'Énergie',
+  fatLabel: 'Matières grasses',
+  saturatedFatLabel: 'Dont acides gras saturés',
+  carbohydratesLabel: 'Glucides',
+  sugarsLabel: 'Dont sucres',
+  fiberLabel: 'Fibres',
+  proteinsLabel: 'Protéines',
+  saltLabel: 'Sel',
+  subscriptionSuccessTitle: 'Merci pour votre abonnement',
+  subscriptionSuccessConfirming: 'Confirmation de votre abonnement…',
+  subscriptionSuccessConfirmed: (
+    'Votre abonnement est actif. Les informations nutritionnelles sont accessibles.'
+  ),
+  subscriptionSuccessPending: (
+    'Paiement reçu. Votre abonnement est en cours de confirmation — cela peut prendre un instant.'
+  ),
+  subscriptionCancelTitle: 'Paiement annulé',
+  subscriptionCancelMessage: "Aucune modification n'a été apportée à votre abonnement.",
+  backToSearch: 'Retour à la recherche',
 } satisfies typeof en;

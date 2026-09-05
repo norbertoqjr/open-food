@@ -1,16 +1,25 @@
 'use client';
 
-import type { ProductSummary } from '@open-food/shared';
+import type { NutritionInfo, ProductSummary } from '@open-food/shared';
 import Image from 'next/image';
 import { use, useEffect, useState } from 'react';
+import { NutritionPanel } from '@/components/nutrition-panel';
+import { SubscribePrompt } from '@/components/subscribe-prompt';
 import { Card } from '@/components/ui/card';
 import { useLocale } from '@/lib/locale-context';
-import { ApiError, getProduct } from '@/lib/api';
+import {
+  ApiError, getNutrition, getProduct, getSubscriptionStatus,
+} from '@/lib/api';
 
 type ProductState = { status: 'loading' }
   | { status: 'not-found' }
   | { status: 'error'; message: string }
   | { status: 'success'; product: ProductSummary };
+
+type NutritionState = { status: 'checking' }
+  | { status: 'locked' }
+  | { status: 'unavailable' }
+  | { status: 'unlocked'; nutrition: NutritionInfo };
 
 // A client component, not an async Server Component: the selected locale
 // is client-only (localStorage-backed) state, and this page must re-fetch
@@ -21,6 +30,7 @@ export default function ProductPage({ params }: PageProps<'/products/[id]'>) {
   const { id } = use(params);
   const { locale, t } = useLocale();
   const [state, setState] = useState<ProductState>({ status: 'loading' });
+  const [nutritionState, setNutritionState] = useState<NutritionState>({ status: 'checking' });
 
   // A fresh fetch per id/locale change, resetting to a loading state before
   // it starts: the standard vanilla-React pattern for this without pulling
@@ -52,6 +62,46 @@ export default function ProductPage({ params }: PageProps<'/products/[id]'>) {
       cancelled = true;
     };
   }, [id, locale, t.searchFailedError]);
+
+  // Entitlement, then nutrition, are checked independently of the product
+  // fetch above and on every request — never assumed from a prior page
+  // visit or a successful checkout redirect (see build plan, section 4).
+  useEffect(() => {
+    let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setNutritionState({ status: 'checking' });
+
+    getSubscriptionStatus()
+      .then((subscription) => {
+        if (cancelled) {
+          return Promise.resolve();
+        }
+        if (!subscription.active) {
+          setNutritionState({ status: 'locked' });
+          return Promise.resolve();
+        }
+        return getNutrition(id)
+          .then((nutrition) => {
+            if (!cancelled) {
+              setNutritionState({ status: 'unlocked', nutrition });
+            }
+          })
+          .catch(() => {
+            if (!cancelled) {
+              setNutritionState({ status: 'unavailable' });
+            }
+          });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setNutritionState({ status: 'locked' });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   if (state.status === 'loading') {
     return (
@@ -104,6 +154,14 @@ export default function ProductPage({ params }: PageProps<'/products/[id]'>) {
           <h1 className="text-xl font-semibold">{product.name ?? t.unnamedProduct}</h1>
           <p className="text-sm text-muted-foreground">{product.brand ?? t.unknownBrand}</p>
         </div>
+
+        {nutritionState.status === 'locked' ? <SubscribePrompt /> : null}
+        {nutritionState.status === 'unavailable' ? (
+          <p className="text-sm text-muted-foreground">{t.nutritionUnavailable}</p>
+        ) : null}
+        {nutritionState.status === 'unlocked' ? (
+          <NutritionPanel nutrition={nutritionState.nutrition} />
+        ) : null}
       </Card>
     </main>
   );
