@@ -23,6 +23,10 @@ coverage/
 *.tsbuildinfo
 .eslintcache
 .turbo/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
 
 # Logs
 *.log
