@@ -5,6 +5,7 @@ import * as z from 'zod';
 // every read, so a misconfigured deployment fails immediately.
 const result = webEnvSchema.safeParse({
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
 });
 
 if (!result.success) {
