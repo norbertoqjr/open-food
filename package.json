@@ -24,8 +24,23 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@prisma/adapter-mariadb": "^7.10.0",
     "concurrently": "^10.0.5",
+    "dotenv": "^17.4.2",
     "eslint": "^9.39.5",
-    "eslint-config-airbnb-extended": "^3.2.0"
+    "eslint-config-airbnb-extended": "^3.2.0",
+    "prisma": "^7.10.0",
+    "tsx": "^4.23.13"
+  },
+  "allowScripts": {
+    "@prisma/engines@7.10.0": true,
+    "esbuild@0.28.2": true,
+    "prisma@7.10.0": true,
+    "unrs-resolver@1.12.2": true
+  },
+  "overrides": {
+    "mysql2": "^3.24.3",
+    "deepmerge-ts": "^8.0.2",
+    "mariadb": "^3.5.4"
   }
 }
