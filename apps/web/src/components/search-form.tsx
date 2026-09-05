@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useLocale } from '@/lib/locale-context';
 
 interface SearchFormProps {
   query: string;
@@ -18,6 +19,7 @@ interface SearchFormProps {
 // this project initialized with does not ship a working Form component (see
 // the shadcn-nextjs skill). A single text field needs no Controller either.
 export function SearchForm({ query, onSearch, isSearching }: SearchFormProps) {
+  const { t } = useLocale();
   const {
     register,
     handleSubmit,
@@ -38,21 +40,24 @@ export function SearchForm({ query, onSearch, isSearching }: SearchFormProps) {
       className="flex w-full max-w-md flex-col gap-2"
       noValidate
     >
-      <Label htmlFor="search-query">Search packaged foods</Label>
+      <Label htmlFor="search-query">{t.searchLabel}</Label>
       <div className="flex gap-2">
         <Input
           id="search-query"
-          placeholder="e.g. nutella"
+          placeholder={t.searchPlaceholder}
           aria-invalid={Boolean(errors.query)}
           {...register('query')}
         />
         <Button type="submit" disabled={isSearching}>
-          {isSearching ? 'Searching…' : 'Search'}
+          {isSearching ? t.searchingButton : t.searchButton}
         </Button>
       </div>
+      {/* The shared Zod schema's own message is API-facing English only;
+          the visible error here is always the current locale's translation,
+          shown whenever validation fails regardless of that message's text. */}
       {errors.query ? (
         <p role="alert" className="text-sm text-destructive">
-          {errors.query.message}
+          {t.searchRequiredError}
         </p>
       ) : null}
     </form>

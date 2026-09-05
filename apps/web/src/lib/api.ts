@@ -38,8 +38,9 @@ export function searchProducts(
   return apiFetch<SearchResult>(`/products/search?${params.toString()}`);
 }
 
-export function getProduct(id: string): Promise<ProductSummary> {
-  return apiFetch<ProductSummary>(`/products/${encodeURIComponent(id)}`);
+export function getProduct(id: string, locale: Locale): Promise<ProductSummary> {
+  const params = new URLSearchParams({ locale });
+  return apiFetch<ProductSummary>(`/products/${encodeURIComponent(id)}?${params.toString()}`);
 }
 
 export function getRecentSearches(): Promise<RecentSearchItem[]> {

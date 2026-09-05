@@ -1,5 +1,6 @@
 import type { RecentSearchItem } from '@open-food/shared';
 import { Button } from '@/components/ui/button';
+import { useLocale } from '@/lib/locale-context';
 
 interface RecentSearchesListProps {
   items: RecentSearchItem[];
@@ -7,13 +8,15 @@ interface RecentSearchesListProps {
 }
 
 export function RecentSearchesList({ items, onSelect }: RecentSearchesListProps) {
+  const { t } = useLocale();
+
   if (items.length === 0) {
     return null;
   }
 
   return (
     <div className="flex w-full max-w-md flex-col gap-2">
-      <p className="text-sm font-medium text-muted-foreground">Recent searches</p>
+      <p className="text-sm font-medium text-muted-foreground">{t.recentSearchesLabel}</p>
       <div className="flex flex-wrap gap-2">
         {items.map((item) => (
           <Button
