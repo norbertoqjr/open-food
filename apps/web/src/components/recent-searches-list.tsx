@@ -1,0 +1,35 @@
+import type { RecentSearchItem } from '@open-food/shared';
+import { Button } from '@/components/ui/button';
+import { useLocale } from '@/lib/locale-context';
+
+interface RecentSearchesListProps {
+  items: RecentSearchItem[];
+  onSelect: (query: string) => void;
+}
+
+export function RecentSearchesList({ items, onSelect }: RecentSearchesListProps) {
+  const { t } = useLocale();
+
+  if (items.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="flex w-full max-w-xl flex-col gap-2">
+      <p className="text-xs font-medium text-muted-foreground">{t.recentSearchesLabel}</p>
+      <div className="flex flex-wrap gap-2">
+        {items.map((item) => (
+          <Button
+            key={item.id}
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onSelect(item.query)}
+          >
+            {item.query}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+}

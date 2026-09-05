@@ -9,6 +9,7 @@ build/
 out/
 .next/
 next-env.d.ts
+apps/api/src/generated/
 
 # Environment — templates are committed, real values never are
 .env
@@ -22,6 +23,10 @@ coverage/
 *.tsbuildinfo
 .eslintcache
 .turbo/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
 
 # Logs
 *.log

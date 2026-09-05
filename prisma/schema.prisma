@@ -1,0 +1,71 @@
+// Prisma schema for Open Food. Connection details are configured in
+// prisma.config.ts, which loads apps/api/.env even though this schema lives
+// at the repository root (see build plan, section 1).
+
+datasource db {
+  provider = "mysql"
+}
+
+generator client {
+  provider = "prisma-client"
+  // Placed inside apps/api/src so it shares that app's tsc rootDir; a
+  // sibling of src/ would shift the inferred rootDir and break the flat
+  // dist/main.js layout apps/api's start:prod script assumes.
+  output = "../apps/api/src/generated/prisma"
+}
+
+model User {
+  id               String    @id @default(cuid())
+  stripeCustomerId String?   @unique
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  recentSearches   RecentSearch[]
+  subscription     Subscription?
+}
+
+model RecentSearch {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  query     String
+  locale    String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+enum SubscriptionStatus {
+  incomplete
+  incomplete_expired
+  trialing
+  active
+  past_due
+  canceled
+  unpaid
+  paused
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String             @unique
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeSubscriptionId String             @unique
+  stripePriceId        String
+  status               SubscriptionStatus
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  // Stripe does not guarantee webhook delivery order; this is the `created`
+  // timestamp of the last event actually applied, so a delayed, older retry
+  // can never overwrite a newer state.
+  lastEventAt          DateTime
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+}
+
+// Records Stripe webhook event IDs already applied, so a redelivered event is
+// a no-op instead of a duplicate state transition.
+model ProcessedStripeEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now())
+}

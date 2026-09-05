@@ -1,0 +1,47 @@
+import type { en } from './en';
+
+export const fr = {
+  appTitle: 'Open Food',
+  appTagline: 'Recherchez des aliments emballés par nom ou marque.',
+  searchLabel: 'Rechercher des aliments emballés',
+  searchPlaceholder: 'p. ex. nutella',
+  searchButton: 'Rechercher',
+  searchingButton: 'Recherche…',
+  searchRequiredError: 'Saisissez un terme de recherche.',
+  searchIdleHint: 'Recherchez par nom de produit ou marque pour voir les résultats ici.',
+  searchFailedError: 'Échec de la recherche. Réessayez.',
+  recentSearchesLabel: 'Recherches récentes',
+  unnamedProduct: 'Produit sans nom',
+  unknownBrand: 'Marque inconnue',
+  noImage: 'Aucune image',
+  noImageAvailable: 'Aucune image disponible',
+  noResultsFor: (query: string) => `Aucun résultat pour « ${query} ».`,
+  resultsCount: (formattedTotal: string) => `${formattedTotal} résultats`,
+  subscribePrompt: 'Abonnez-vous pour voir les informations nutritionnelles de ce produit.',
+  subscribeButton: "S'abonner",
+  redirectingToCheckout: 'Redirection vers le paiement…',
+  checkoutFailedError: 'Impossible de démarrer le paiement. Réessayez.',
+  billingNotConfiguredError: 'Les abonnements ne sont pas encore configurés sur ce serveur.',
+  nutritionTitle: 'Nutrition',
+  nutritionBasis: (basis: string) => `Pour ${basis}`,
+  nutritionUnavailable: 'Aucune information nutritionnelle disponible pour ce produit.',
+  energyLabel: 'Énergie',
+  fatLabel: 'Matières grasses',
+  saturatedFatLabel: 'Dont acides gras saturés',
+  carbohydratesLabel: 'Glucides',
+  sugarsLabel: 'Dont sucres',
+  fiberLabel: 'Fibres',
+  proteinsLabel: 'Protéines',
+  saltLabel: 'Sel',
+  subscriptionSuccessTitle: 'Merci pour votre abonnement',
+  subscriptionSuccessConfirming: 'Confirmation de votre abonnement…',
+  subscriptionSuccessConfirmed: (
+    'Votre abonnement est actif. Les informations nutritionnelles sont accessibles.'
+  ),
+  subscriptionSuccessPending: (
+    'Paiement reçu. Votre abonnement est en cours de confirmation — cela peut prendre un instant.'
+  ),
+  subscriptionCancelTitle: 'Paiement annulé',
+  subscriptionCancelMessage: "Aucune modification n'a été apportée à votre abonnement.",
+  backToSearch: 'Retour à la recherche',
+} satisfies typeof en;
