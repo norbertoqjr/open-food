@@ -1,8 +1,6 @@
 'use client';
 
-import { User } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLocale } from '@/lib/locale-context';
 import { useSubscription } from '@/lib/subscription-context';
@@ -10,20 +8,17 @@ import { useCheckout } from '@/lib/use-checkout';
 
 const BADGE = 'rounded-full px-2 py-1 text-xs font-semibold';
 
-// Placeholder portraits from https://github.com/mhshariatipour1378/Avatars-Placeholder,
-// whose id route serves a fixed set of faces numbered 0-100.
-const AVATAR_COUNT = 101;
-
-// Keyed on the user id rather than the display name: t.demoUserName is
-// translated, so a name-derived face would change every time the language
-// picker is touched, as if the account had changed with it.
-function avatarUrl(userId: string) {
-  let hash = 0;
-  for (let i = 0; i < userId.length; i += 1) {
-    hash = (hash * 31 + userId.charCodeAt(i)) % AVATAR_COUNT;
-  }
-  return `https://avatarapi.runflare.run/public/${hash}`;
-}
+// A placeholder portrait from Avatars-Placeholder, checked into public/ rather
+// than fetched per request:
+// https://github.com/mhshariatipour1378/Avatars-Placeholder
+//
+// It used to be requested live from that service's id route, which made the
+// avatar flicker between the portrait and a fallback glyph: the host resolves
+// to a private address from here, so Next's SSRF guard refused to proxy it and
+// only cached variants ever rendered. There is exactly one demo user, so a
+// service that derives a face per username was buying nothing that a committed
+// 2KB file does not.
+const AVATAR_SRC = '/demo-avatar.png';
 
 // The app has no sign-in, so this is not a session indicator: it makes the
 // single demo user every request acts as, and the subscription that gates
@@ -34,10 +29,6 @@ export function CurrentUser() {
     user, active, loading, failed,
   } = useSubscription();
   const { start, state } = useCheckout();
-  // The portraits come from a third-party placeholder service, so treat it as
-  // something that can be down: declared above the early returns because it is
-  // a hook, and falls back to the icon this used to draw unconditionally.
-  const [avatarFailed, setAvatarFailed] = useState(false);
 
   // An unreachable API already surfaces as an error on the page itself;
   // repeating it in the header would be noise.
@@ -81,18 +72,13 @@ export function CurrentUser() {
           active ? 'bg-brand text-on-brand ring-2 ring-brand' : 'bg-muted text-muted-foreground',
         ].join(' ')}
       >
-        {avatarFailed ? (
-          <User className="size-4" />
-        ) : (
-          <Image
-            src={avatarUrl(user.id)}
-            alt=""
-            width={32}
-            height={32}
-            className="size-full object-cover"
-            onError={() => setAvatarFailed(true)}
-          />
-        )}
+        <Image
+          src={AVATAR_SRC}
+          alt=""
+          width={32}
+          height={32}
+          className="size-full object-cover"
+        />
       </span>
 
       {/*
