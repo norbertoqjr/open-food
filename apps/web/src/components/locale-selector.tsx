@@ -1,6 +1,7 @@
 'use client';
 
 import { SUPPORTED_LOCALES, isSupportedLocale } from '@open-food/shared';
+import { ChevronDown } from 'lucide-react';
 import { useId } from 'react';
 import { useLocale } from '@/lib/locale-context';
 
@@ -17,34 +18,44 @@ export function LocaleSelector() {
 
   return (
     <div className="flex items-center gap-2">
-      <label
-        htmlFor={selectId}
-        className="hidden text-xs font-medium text-muted-foreground sm:block"
-      >
+      <label htmlFor={selectId} className="type-caption hidden text-muted-foreground sm:block">
         {t.selectLanguageLabel}
       </label>
-      <select
-        id={selectId}
-        value={locale}
-        // A native select keeps the platform's own picker on touch devices
-        // and stays keyboard-navigable without any custom listbox code.
-        onChange={(event) => {
-          const next = event.target.value;
-          if (isSupportedLocale(next)) setLocale(next);
-        }}
-        className={[
-          'h-8 cursor-pointer rounded-lg border border-border bg-background px-2',
-          'text-sm font-medium outline-none transition-colors',
-          'hover:bg-muted focus-visible:border-ring focus-visible:ring-3',
-          'focus-visible:ring-ring/50 dark:border-input dark:bg-input/30',
-        ].join(' ')}
-      >
-        {SUPPORTED_LOCALES.map((option) => (
-          <option key={option} value={option}>
-            {LOCALE_LABELS[option]}
-          </option>
-        ))}
-      </select>
+      {/* The browser's own arrow sits hard against the right edge, which
+          collides with a pill's curve. appearance-none drops only that
+          rendering -- the control stays a real <select>, so touch devices
+          still get the platform picker and keyboard behaviour is untouched --
+          and the chevron below is placed with padding to clear the radius. */}
+      <div className="relative">
+        <select
+          id={selectId}
+          value={locale}
+          onChange={(event) => {
+            const next = event.target.value;
+            if (isSupportedLocale(next)) setLocale(next);
+          }}
+          className={[
+            'min-h-11 w-full cursor-pointer appearance-none rounded-full',
+            'border border-border bg-background py-2 pr-11 pl-5',
+            'text-sm font-medium text-foreground outline-none',
+            'transition-colors duration-[var(--duration-normal)] ease-[var(--ease)]',
+            'hover:bg-muted',
+          ].join(' ')}
+        >
+          {SUPPORTED_LOCALES.map((option) => (
+            <option key={option} value={option}>
+              {LOCALE_LABELS[option]}
+            </option>
+          ))}
+        </select>
+        <ChevronDown
+          aria-hidden
+          className={[
+            'pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2',
+            'text-muted-foreground',
+          ].join(' ')}
+        />
+      </div>
     </div>
   );
 }

@@ -16,6 +16,18 @@ test.beforeEach(async ({ page }) => {
     await route.fulfill({ json: [] });
   });
 
+  // The header and the homepage banner both read subscription status. Pinning
+  // it keeps the shell out of the assertions below.
+  await page.route('**/me', async (route) => {
+    await route.fulfill({
+      json: {
+        id: 'demo-user',
+        memberSince: '2026-01-01T00:00:00.000Z',
+        subscription: { active: false, cancelAtPeriodEnd: false, currentPeriodEnd: null },
+      },
+    });
+  });
+
   await page.route('**/products/search*', async (route) => {
     const url = new URL(route.request().url());
     const locale = url.searchParams.get('locale') ?? 'en';
@@ -39,20 +51,21 @@ test('searching shows a result card, and switching language re-fetches localized
 }) => {
   await page.goto('/');
 
-  await expect(page.getByRole('heading', { name: 'Open Food' })).toBeVisible();
+  // The page's one h1 is the hero, not the header wordmark: the wordmark is a
+  // link home, and a page should carry a single top-level heading.
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
   await page.getByLabel('Search packaged foods').fill('nutella');
-  await page.getByRole('button', { name: 'Search', exact: true }).click();
+  // The submit is a circular icon button, so it is addressed by its
+  // accessible name rather than visible text.
+  await page.getByRole('button', { name: 'Search products' }).click();
 
   await expect(page.getByText('Nutella', { exact: true })).toBeVisible();
 
-  // The locale selector is a row of buttons (EN/NL/DE/FR), not a native
-  // <select> — this project's Base UI registry has no working Form/Select
-  // wrapper (see the shadcn-nextjs skill), so a plain button group is what
-  // actually ships.
-  await page.getByRole('button', { name: 'FR', exact: true }).click();
+  // A native <select>, chosen so touch devices get the platform picker.
+  await page.getByLabel('Select language').selectOption('fr');
 
-  await expect(page.getByRole('button', { name: 'Rechercher', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Rechercher des produits' })).toBeVisible();
   await expect(page.getByText('Nutella FR', { exact: true })).toBeVisible();
 });
 
@@ -66,8 +79,26 @@ test('a blank query is rejected client-side with a translated error, no request 
   });
 
   await page.goto('/');
-  await page.getByRole('button', { name: 'Search', exact: true }).click();
+  await page.getByRole('button', { name: 'Search products' }).click();
 
   await expect(page.getByText('Enter a search term.')).toBeVisible();
   expect(searchRequested).toBe(false);
+});
+
+test('the clear button empties the field and returns the page to its idle state', async ({
+  page,
+}) => {
+  await page.goto('/');
+
+  const field = page.getByLabel('Search packaged foods');
+  await field.fill('nutella');
+  await page.getByRole('button', { name: 'Search products' }).click();
+  await expect(page.getByText('Nutella', { exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Clear search' }).click();
+
+  await expect(field).toHaveValue('');
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByText('Search by product name or brand to see results here.'))
+    .toBeVisible();
 });

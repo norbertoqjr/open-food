@@ -6,7 +6,7 @@ import { useLocale } from '@/lib/locale-context';
 import { useSubscription } from '@/lib/subscription-context';
 import { useCheckout } from '@/lib/use-checkout';
 
-const BADGE_BASE = 'ml-1.5 rounded-full px-1.5 py-0.5 text-[0.65rem] font-semibold';
+const BADGE = 'rounded-full px-2 py-1 text-xs font-semibold';
 
 // The app has no sign-in, so this is not a session indicator: it makes the
 // single demo user every request acts as, and the subscription that gates
@@ -23,7 +23,7 @@ export function CurrentUser() {
   if (failed) return null;
 
   if (loading || !user) {
-    return <Skeleton className="h-8 w-32 rounded-full" aria-hidden />;
+    return <Skeleton className="h-11 w-36 rounded-full" aria-hidden />;
   }
 
   const { cancelAtPeriodEnd, currentPeriodEnd } = user.subscription;
@@ -50,14 +50,14 @@ export function CurrentUser() {
         aria-hidden
         className={[
           'grid size-8 shrink-0 place-items-center rounded-full',
-          active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+          active ? 'bg-brand text-on-brand' : 'bg-muted text-muted-foreground',
         ].join(' ')}
       >
         <User className="size-4" />
       </span>
 
       <span className="hidden flex-col leading-tight sm:flex">
-        <span className="text-xs font-medium">
+        <span className="flex items-center gap-1.5 text-sm font-medium">
           <span className="sr-only">
             {t.signedInAs}
             {' '}
@@ -67,21 +67,20 @@ export function CurrentUser() {
             While unsubscribed the badge is the persistent way into checkout
             from any page; once subscribed it is only a status label, so it
             stops being interactive rather than becoming a no-op button.
+            Either way it carries a text label, never colour alone.
           */}
           {active ? (
-            <span className={`${BADGE_BASE} bg-primary/12 text-primary`}>
-              {t.planSubscribed}
-            </span>
+            <span className={`${BADGE} bg-brand-soft text-brand`}>{t.planSubscribed}</span>
           ) : (
             <button
               type="button"
               onClick={start}
               disabled={state === 'redirecting'}
               className={[
-                BADGE_BASE,
-                'cursor-pointer bg-muted text-muted-foreground outline-none transition-colors',
+                BADGE,
+                'cursor-pointer bg-muted text-muted-foreground outline-none',
+                'transition-colors duration-[var(--duration-fast)] ease-[var(--ease)]',
                 'hover:bg-primary hover:text-primary-foreground',
-                'focus-visible:ring-3 focus-visible:ring-ring/50',
                 'disabled:cursor-default disabled:opacity-60',
               ].join(' ')}
             >
@@ -89,9 +88,7 @@ export function CurrentUser() {
             </button>
           )}
         </span>
-        <span className="tabular-figures text-[0.7rem] text-muted-foreground">
-          {detail}
-        </span>
+        <span className="type-caption tabular-figures text-muted-foreground">{detail}</span>
       </span>
     </div>
   );

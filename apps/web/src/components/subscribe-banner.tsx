@@ -19,20 +19,20 @@ export function SubscribeBanner() {
   return (
     <div
       className={[
-        'flex flex-col gap-3 rounded-xl border border-border bg-muted/40 p-4',
-        'sm:flex-row sm:items-center sm:justify-between',
+        'flex flex-col gap-4 rounded-2xl bg-brand-soft px-5 py-4',
+        'sm:flex-row sm:items-center sm:justify-between sm:gap-6',
       ].join(' ')}
     >
       <div className="flex flex-col gap-0.5">
         <p className="text-sm font-semibold tracking-tight">{t.subscribeGlobalTitle}</p>
         <p className="text-sm text-muted-foreground">{t.subscribeGlobalPrompt}</p>
       </div>
-      <div className="flex flex-col items-start gap-2 sm:items-end">
-        <Button type="button" onClick={start} disabled={state === 'redirecting'}>
+      <div className="flex flex-col items-start gap-2 sm:shrink-0 sm:items-end">
+        <Button type="button" size="sm" onClick={start} disabled={state === 'redirecting'}>
           {state === 'redirecting' ? t.redirectingToCheckout : t.subscribeButton}
         </Button>
         {state === 'error' || state === 'not-configured' ? (
-          <p role="alert" className="text-sm font-medium text-destructive">
+          <p role="alert" className="type-caption font-medium text-destructive">
             {state === 'not-configured' ? t.billingNotConfiguredError : t.checkoutFailedError}
           </p>
         ) : null}

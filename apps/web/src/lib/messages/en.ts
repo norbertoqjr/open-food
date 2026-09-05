@@ -4,8 +4,18 @@
 export const en = {
   appTitle: 'Open Food',
   appTagline: 'Search packaged foods by name or brand.',
+  heroHeadingLead: "Discover what's in",
+  heroHeadingAccent: 'your food.',
+  heroDescription: (
+    'Search packaged foods by name or brand. Explore product information '
+    + 'and unlock detailed nutrition.'
+  ),
+  searchSubmitLabel: 'Search products',
+  viewProduct: 'View product',
+  footerAttribution: 'Product data from',
+  footerNote: 'A demo application. Nutrition requires an active subscription.',
   searchLabel: 'Search packaged foods',
-  searchPlaceholder: 'e.g. nutella',
+  searchPlaceholder: 'Try a product or brand, such as Nutella',
   searchButton: 'Search',
   clearSearch: 'Clear search',
   searchingButton: 'Searching…',
@@ -50,6 +60,12 @@ export const en = {
   ecoScoreLabel: 'Eco-Score',
   nutriScoreLabel: 'Nutri-Score',
   nutritionTitle: 'Nutrition',
+  nutritionLockedTitle: 'Unlock detailed nutrition',
+  nutritionLockedBody: "Subscribe to view this product's nutritional values.",
+  continueToCheckout: 'Continue to checkout',
+  nutrientColumn: 'Nutrient',
+  amountColumn: 'Amount',
+  notAvailable: 'Not available',
   nutritionBasis: (basis: string) => `Per ${basis}`,
   nutritionUnavailable: 'No nutrition data available for this product.',
   energyLabel: 'Energy',

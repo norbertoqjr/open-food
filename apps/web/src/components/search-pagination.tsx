@@ -21,19 +21,14 @@ export function SearchPagination({
   // Nothing to page through: a single page needs no controls.
   if (pageCount <= 1) return null;
 
-  const isFirst = page <= 1;
-  const isLast = page >= pageCount;
-
   return (
-    <nav
-      aria-label={t.paginationLabel}
-      className="flex items-center justify-between gap-4 border-t border-border pt-5"
-    >
+    <nav aria-label={t.paginationLabel} className="mt-10 flex items-center justify-center gap-3">
       <Button
         type="button"
         variant="outline"
+        size="sm"
         onClick={() => onPageChange(page - 1)}
-        disabled={isFirst}
+        disabled={page <= 1}
       >
         <ChevronLeft className="size-4" aria-hidden />
         {t.previousPage}
@@ -41,15 +36,16 @@ export function SearchPagination({
 
       {/* aria-live so a screen reader hears the page change, which is
           otherwise silent when only the grid above swaps out. */}
-      <p aria-live="polite" className="tabular-figures text-xs text-muted-foreground">
+      <p aria-live="polite" className="type-caption tabular-figures px-2 text-muted-foreground">
         {t.pageOf(formatNumber(page, locale), formatNumber(pageCount, locale))}
       </p>
 
       <Button
         type="button"
         variant="outline"
+        size="sm"
         onClick={() => onPageChange(page + 1)}
-        disabled={isLast}
+        disabled={page >= pageCount}
       >
         {t.nextPage}
         <ChevronRight className="size-4" aria-hidden />

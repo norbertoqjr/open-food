@@ -28,6 +28,9 @@ type NutritionState = { status: 'checking' }
   | { status: 'unavailable' }
   | { status: 'unlocked'; nutrition: NutritionInfo };
 
+// Same max width and gutters as the search route, so the two never drift.
+const SHELL = 'mx-auto w-full max-w-[1440px] flex-1 px-5 py-10 sm:px-8 sm:py-14 lg:px-16';
+
 // Returns to the search the user arrived from -- the same query and the same
 // page of results, both carried in the URL -- or to a bare home page when
 // they landed on this product directly.
@@ -39,9 +42,9 @@ function BackToSearchLink({ label }: { label: string }) {
     <Link
       href={buildSearchHref(searchQuery, parsePage(params.get('page')))}
       className={[
-        'inline-flex items-center gap-1.5 rounded-sm text-sm text-muted-foreground',
-        'transition-colors hover:text-foreground focus-visible:outline-none',
-        'focus-visible:ring-3 focus-visible:ring-ring/50',
+        'inline-flex min-h-11 items-center gap-2 rounded-full text-sm text-muted-foreground',
+        'transition-colors duration-[var(--duration-fast)] ease-[var(--ease)]',
+        'hover:text-foreground',
       ].join(' ')}
     >
       <ArrowLeft className="size-3.5" aria-hidden />
@@ -134,10 +137,10 @@ function ProductView({ params }: PageProps<'/products/[id]'>) {
 
   if (state.status === 'loading') {
     return (
-      <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
+      <main className={SHELL}>
         <BackToSearchLink label={t.backToSearch} />
-        <div className="mt-6 grid gap-8 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
-          <Skeleton className="aspect-square rounded-xl" />
+        <div className="mt-8 grid gap-12 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
+          <Skeleton className="aspect-[4/3] rounded-2xl" />
           <div className="flex flex-col gap-3">
             <Skeleton className="h-7 w-3/5 rounded-sm" />
             <Skeleton className="h-4 w-2/5 rounded-sm" />
@@ -149,18 +152,30 @@ function ProductView({ params }: PageProps<'/products/[id]'>) {
 
   if (state.status === 'not-found') {
     return (
-      <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
+      <main className={SHELL}>
         <BackToSearchLink label={t.backToSearch} />
-        <p className="mt-6 text-sm text-muted-foreground">{t.noResultsFor(id)}</p>
+        <p
+          className="mt-8 rounded-2xl bg-muted px-5 py-4 text-sm text-muted-foreground"
+        >
+          {t.noResultsFor(id)}
+        </p>
       </main>
     );
   }
 
   if (state.status === 'error') {
     return (
-      <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
+      <main className={SHELL}>
         <BackToSearchLink label={t.backToSearch} />
-        <p role="alert" className="mt-6 text-sm font-medium text-destructive">{state.message}</p>
+        <p
+          role="alert"
+          className={[
+            'mt-8 rounded-2xl bg-destructive-soft px-5 py-4',
+            'text-sm font-medium text-destructive',
+          ].join(' ')}
+        >
+          {state.message}
+        </p>
       </main>
     );
   }
@@ -168,13 +183,13 @@ function ProductView({ params }: PageProps<'/products/[id]'>) {
   const { product } = state;
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
+    <main className={SHELL}>
       <BackToSearchLink label={t.backToSearch} />
-      <div className="mt-6 grid gap-8 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] md:items-start">
+      <div className="mt-8 grid gap-12 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] md:items-start">
         <div
           className={[
-            'flex aspect-square items-center justify-center overflow-hidden',
-            'rounded-xl border border-border bg-muted',
+            'flex aspect-[4/3] items-center justify-center overflow-hidden',
+            'rounded-2xl bg-muted p-8',
           ].join(' ')}
         >
           {product.imageUrl ? (
@@ -193,9 +208,9 @@ function ProductView({ params }: PageProps<'/products/[id]'>) {
 
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-1.5">
-            <h2 className="text-pretty text-2xl font-semibold tracking-tight">
+            <h1 className="type-section text-pretty">
               {product.name ?? t.unnamedProduct}
-            </h2>
+            </h1>
             <p className="text-sm text-muted-foreground">{product.brand ?? t.unknownBrand}</p>
             {product.genericName ? (
               <p className="text-sm text-muted-foreground">{product.genericName}</p>
@@ -206,7 +221,7 @@ function ProductView({ params }: PageProps<'/products/[id]'>) {
 
           {nutritionState.status === 'locked' ? <SubscribePrompt /> : null}
           {nutritionState.status === 'unavailable' ? (
-            <p className="border-t border-border pt-5 text-sm text-muted-foreground">
+            <p className="rounded-2xl bg-muted px-5 py-4 text-sm text-muted-foreground">
               {t.nutritionUnavailable}
             </p>
           ) : null}
@@ -223,7 +238,7 @@ function ProductView({ params }: PageProps<'/products/[id]'>) {
 // without one the whole route opts out of static rendering.
 export default function ProductPage(props: PageProps<'/products/[id]'>) {
   return (
-    <Suspense fallback={<main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10" />}>
+    <Suspense fallback={<main className={SHELL} />}>
       <ProductView {...props} />
     </Suspense>
   );

@@ -2,30 +2,25 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
+  /* Brand accent, distinct from shadcn's --accent, which is a hover surface
+     rather than a colour. Used for the search submit, focus rings, and the
+     one accented phrase in the hero. */
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-soft: var(--brand-soft);
+  --color-on-brand: var(--on-brand);
+  --color-surface-hover: var(--surface-hover);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-destructive-soft: var(--destructive-soft);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  /* These must point at the variables next/font actually defines in
-     layout.tsx. Self-referencing --font-sans resolved to nothing and the
-     whole app silently fell back to the browser's default serif. */
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-geist-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
+  /* Must point at the variable next/font actually defines in layout.tsx.
+     A self-referencing --font-sans once resolved to nothing and dropped the
+     whole app to the browser's default serif. */
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-inter);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -42,94 +37,74 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  /* Named for what they wrap, not for a t-shirt size, so a card and a hero
+     image cannot drift apart. */
+  --radius-sm: 8px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-3xl: 24px;
+  --radius-4xl: 24px;
 }
 
-/* One accent, used only for primary action, the active locale, focus, and
-   selection. It is a deepened take on Open Food Facts' own orange — the app
-   is built entirely on their data, so the identity is borrowed on purpose
-   rather than picked at random. Neutrals carry a trace of the same hue so
-   the greys and the accent read as one warm system, not grey plus orange. */
+/* Palette from docs/design.json. Two families only: a near-neutral scale
+   carrying text and surfaces, and one warm accent reserved for the search
+   submit, focus, and the single emphasised phrase in the hero.
+
+   Note the two different "accents": --brand is the orange, while shadcn's
+   --accent is its hover-surface slot and stays neutral. Conflating them
+   turns every hover state orange.
+
+   Light only, by design -- the spec defines no dark palette, and the .dark
+   class this file used to define was never applied by anything. */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0.004 55);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0.004 55);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0.004 55);
-  --primary: oklch(0.555 0.158 45);
-  --primary-foreground: oklch(0.99 0.008 60);
-  --secondary: oklch(0.972 0.004 60);
-  --secondary-foreground: oklch(0.205 0.006 55);
-  --muted: oklch(0.972 0.004 60);
-  --muted-foreground: oklch(0.532 0.012 55);
-  --accent: oklch(0.972 0.004 60);
-  --accent-foreground: oklch(0.205 0.006 55);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.917 0.005 60);
-  --input: oklch(0.917 0.005 60);
-  --ring: oklch(0.555 0.158 45);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
+  --background: #ffffff;
+  --foreground: #171717;
+  --card: #ffffff;
+  --card-foreground: #171717;
+  --popover: #ffffff;
+  --popover-foreground: #171717;
 
-.dark {
-  --background: oklch(0.145 0.005 55);
-  --foreground: oklch(0.985 0.003 60);
-  --card: oklch(0.205 0.006 55);
-  --card-foreground: oklch(0.985 0.003 60);
-  --popover: oklch(0.205 0.006 55);
-  --popover-foreground: oklch(0.985 0.003 60);
-  /* Lifted on dark so the accent keeps its contrast against a dark card,
-     with dark text on it rather than white. */
-  --primary: oklch(0.735 0.155 50);
-  --primary-foreground: oklch(0.185 0.02 50);
-  --secondary: oklch(0.269 0.007 55);
-  --secondary-foreground: oklch(0.985 0.003 60);
-  --muted: oklch(0.269 0.007 55);
-  --muted-foreground: oklch(0.722 0.012 58);
-  --accent: oklch(0.269 0.007 55);
-  --accent-foreground: oklch(0.985 0.003 60);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.735 0.155 50);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* Primary action is near-black, not the brand orange: the spec reserves
+     orange for the search submit so it stays the one obvious entry point. */
+  --primary: #171717;
+  --primary-foreground: #ffffff;
+  --primary-button-hover: #343434;
+  --secondary: #f7f7f8;
+  --secondary-foreground: #171717;
+  --muted: #f7f7f8;
+  --muted-foreground: #62626a;
+  --accent: #f7f7f8;
+  --accent-foreground: #171717;
+  --surface-hover: #eeeef0;
+
+  --brand: #b45309;
+  --brand-hover: #92400e;
+  --brand-soft: #fff7ed;
+  --on-brand: #ffffff;
+
+  --success: #166534;
+  --success-soft: #f0fdf4;
+  --destructive: #b91c1c;
+  --destructive-soft: #fef2f2;
+
+  --border: #e5e5e8;
+  --input: #e5e5e8;
+  --ring: #b45309;
+  --radius: 1rem;
+
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --duration-fast: 120ms;
+  --duration-normal: 180ms;
 }
 
 @layer base {
+  /* Only the default border colour here. The outline is set once, on
+     :focus-visible below -- leaving a half-opacity outline colour on every
+     element quietly won over it and washed out the focus ring. */
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
@@ -142,13 +117,13 @@
      Left at their defaults they are the giveaway that a page was assembled
      rather than built. */
   ::selection {
-    background-color: color-mix(in oklch, var(--primary) 22%, transparent);
+    background-color: color-mix(in srgb, var(--brand) 18%, transparent);
     color: var(--foreground);
   }
 
   input,
   textarea {
-    caret-color: var(--primary);
+    caret-color: var(--brand);
   }
 
   * {
@@ -177,5 +152,50 @@
   .tabular-figures {
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum" 1;
+  }
+
+  /* One focus treatment for everything, set here rather than per component so
+     a control cannot be added without it. */
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 3px;
+  }
+
+  /* Motion is decoration here: nothing in the app depends on an animation to
+     convey state, so it can all be switched off. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* The type scale, as three roles rather than a size for every element. Sizes
+   come from docs/design.json; the hero clamps so it stays readable at 320px
+   and does not overwhelm a wide viewport. */
+@layer components {
+  .type-hero {
+    font-size: clamp(2.25rem, 4.5vw, 3.5rem);
+    font-weight: 650;
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+  }
+
+  .type-section {
+    font-size: 1.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+  }
+
+  .type-caption {
+    font-size: 0.8125rem;
+    font-weight: 400;
+    line-height: 1.5;
   }
 }

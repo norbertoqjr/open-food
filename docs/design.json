@@ -1,0 +1,1031 @@
+{
+  "name": "Open Food — Dribbble-inspired UI/UX",
+  "version": "2.0.0",
+  "purpose": "Implementation-ready design guidance for redesigning Open Food's food discovery experience.",
+  "reference": {
+    "url": "https://dribbble.com/",
+    "inspection": "Live desktop homepage, hero, search area and discovery grid inspected in browser.",
+    "observedPatterns": [
+      "White canvas with generous horizontal gutters and whitespace",
+      "Horizontal navigation with a compact wordmark and pill primary action",
+      "Two-column hero with oversized dark heading and rounded media",
+      "Soft tinted announcement strip",
+      "Pill search field with circular accent submit button",
+      "Compact discovery tabs and outlined suggestion chips",
+      "Three-column image-led grid at the inspected desktop viewport",
+      "Rounded image containers with compact metadata beneath"
+    ],
+    "accuracy": "sourceExtraction contains measured desktop computed styles from Dribbble homepage DOM. Other sections are proposed Open Food implementation specifications. This is a component-family extraction, not an export of every page, asset or interactive state on Dribbble.",
+    "measuredViewportWidthPx": 1265
+  },
+  "direction": {
+    "personality": [
+      "clear",
+      "friendly",
+      "spacious",
+      "discovery-focused"
+    ],
+    "brand": "Use Open Food's plate-and-fork logo and burnt-orange accent.",
+    "hierarchy": "Search first, product discovery second, subscription details contextual to nutrition access.",
+    "imagery": "Use actual product images returned by Open Food Facts. Keep packages fully visible with object-fit contain.",
+    "contentRule": "Use original Open Food copy and product imagery. Reference Dribbble's layout and interaction patterns."
+  },
+  "tokens": {
+    "colors": {
+      "background": "#FFFFFF",
+      "surface": "#F7F7F8",
+      "surfaceHover": "#EEEEF0",
+      "text": "#171717",
+      "textSecondary": "#62626A",
+      "border": "#E5E5E8",
+      "accent": "#B45309",
+      "accentHover": "#92400E",
+      "accentSoft": "#FFF7ED",
+      "onAccent": "#FFFFFF",
+      "primaryButton": "#171717",
+      "primaryButtonHover": "#343434",
+      "success": "#166534",
+      "successSoft": "#F0FDF4",
+      "error": "#B91C1C",
+      "errorSoft": "#FEF2F2",
+      "focus": "#B45309"
+    },
+    "typography": {
+      "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      "hero": {
+        "fontSize": "clamp(2.25rem, 4.5vw, 3.5rem)",
+        "fontWeight": 650,
+        "lineHeight": 1.1,
+        "letterSpacing": "-0.04em"
+      },
+      "section": {
+        "fontSize": "1.75rem",
+        "fontWeight": 600,
+        "lineHeight": 1.2,
+        "letterSpacing": "-0.025em"
+      },
+      "cardTitle": {
+        "fontSize": "1rem",
+        "fontWeight": 600,
+        "lineHeight": 1.4
+      },
+      "body": {
+        "fontSize": "1rem",
+        "fontWeight": 400,
+        "lineHeight": 1.6
+      },
+      "control": {
+        "fontSize": "0.875rem",
+        "fontWeight": 600,
+        "lineHeight": 1.4
+      },
+      "caption": {
+        "fontSize": "0.8125rem",
+        "fontWeight": 400,
+        "lineHeight": 1.5
+      }
+    },
+    "spacingPx": [
+      4,
+      8,
+      12,
+      16,
+      20,
+      24,
+      32,
+      40,
+      48,
+      64,
+      80,
+      96
+    ],
+    "radiusPx": {
+      "small": 8,
+      "card": 16,
+      "heroMedia": 24,
+      "dialog": 24,
+      "pill": 9999
+    },
+    "shadows": {
+      "rest": "none",
+      "popover": "0 8px 32px rgba(23,23,23,0.10)",
+      "hover": "0 6px 18px rgba(23,23,23,0.06)"
+    },
+    "motion": {
+      "fastMs": 120,
+      "normalMs": 180,
+      "easing": "cubic-bezier(0.2, 0, 0, 1)",
+      "reducedMotion": "Disable transform animations and animated skeletons when prefers-reduced-motion is reduce."
+    },
+    "focusRing": "2px solid #B45309; outline-offset: 3px"
+  },
+  "layout": {
+    "containerMaxWidthPx": 1440,
+    "guttersPx": {
+      "mobile": 20,
+      "tablet": 32,
+      "desktop": 64
+    },
+    "breakpointsPx": {
+      "tablet": 640,
+      "desktop": 1024,
+      "wide": 1440
+    },
+    "header": {
+      "minHeightPx": 80,
+      "position": "static",
+      "alignment": "logo left; navigation center; language and demo account right"
+    },
+    "sectionSpacingPx": {
+      "mobile": 40,
+      "desktop": 72
+    },
+    "hero": {
+      "desktopColumns": "1.15fr 1fr",
+      "gapPx": 48,
+      "mobileColumns": "1fr",
+      "mediaAspectRatio": "4 / 3"
+    },
+    "productGrid": {
+      "columns": {
+        "mobile": 1,
+        "tablet": 2,
+        "desktop": 3,
+        "wide": 4
+      },
+      "gapPx": 28,
+      "imageAspectRatio": "4 / 3"
+    },
+    "smallScreenRules": [
+      "Stack hero content before media",
+      "Keep search visible before decorative media",
+      "Wrap recent-search chips without horizontal page overflow",
+      "Keep language selection accessible",
+      "Allow account controls to wrap",
+      "Use full-width primary actions in dialogs"
+    ]
+  },
+  "components": {
+    "header": {
+      "items": [
+        "Open Food logo linking home",
+        "Search anchor",
+        "Subscription status",
+        "Language selector",
+        "Demo account"
+      ],
+      "logo": {
+        "heightPx": 32,
+        "alt": "Open Food"
+      },
+      "languageSelector": {
+        "options": [
+          "English",
+          "Nederlands",
+          "Deutsch",
+          "Français"
+        ],
+        "values": [
+          "en",
+          "nl",
+          "de",
+          "fr"
+        ],
+        "behavior": "Preserve query and selected product when changing language; reload localized product data and interface copy."
+      }
+    },
+    "hero": {
+      "heading": "Discover what's in your food.",
+      "accentPhrase": "your food",
+      "description": "Search packaged foods by name or brand. Explore product information and unlock detailed nutrition.",
+      "media": "Optional original product arrangement; omit if suitable assets are unavailable.",
+      "visibility": "Full hero for initial state; compact title and search once results are displayed."
+    },
+    "search": {
+      "shape": "pill",
+      "minHeightPx": 60,
+      "background": "surface",
+      "paddingInlinePx": 24,
+      "label": "Search packaged foods",
+      "placeholder": "Try a product or brand, such as Nutella",
+      "submit": {
+        "shape": "circle",
+        "sizePx": 44,
+        "background": "accent",
+        "icon": "search",
+        "accessibleName": "Search products"
+      },
+      "behavior": [
+        "Submit with Enter or search button",
+        "Trim surrounding whitespace",
+        "Prevent blank submissions with inline guidance",
+        "Keep submitted query visible",
+        "Cancel or ignore stale requests",
+        "Preserve query in URL for refresh and sharing",
+        "Show loading status without clearing the query"
+      ],
+      "recentSearches": {
+        "style": "outlined pills",
+        "label": "Recent searches",
+        "maxVisible": 6,
+        "behavior": "Deduplicate displayed terms; selecting a term submits it. Use stored recent searches from the backend."
+      }
+    },
+    "resultsToolbar": {
+      "left": "Result count and current query",
+      "right": "Optional controls only when supported by the API",
+      "note": "Do not add Dribbble's Shots/Designers/Services tabs or popularity sorting to food search without equivalent supported functionality."
+    },
+    "productCard": {
+      "container": "Borderless on white; image region rounded with a soft neutral background.",
+      "image": {
+        "aspectRatio": "4 / 3",
+        "fit": "contain",
+        "paddingPx": 24,
+        "loading": "lazy",
+        "fallback": "Neutral package icon and Image unavailable text"
+      },
+      "metadata": [
+        "Product name, up to two lines",
+        "Brand, with Unknown brand fallback",
+        "View product action"
+      ],
+      "interaction": "Use a clear product-detail link; subtle image-background change on hover and visible focus outline. Keep required information available without hover.",
+      "avoid": [
+        "Fabricated ratings or popularity metrics",
+        "Nutrition values on public cards",
+        "Cropping product packaging",
+        "Nested interactive elements inside a card link"
+      ]
+    },
+    "productDetail": {
+      "presentation": "Dedicated page with back-to-results link preserving search context.",
+      "layout": "Product image left; name, brand and details right; stack on mobile.",
+      "publicFields": [
+        "name",
+        "brand",
+        "image"
+      ],
+      "nutritionActive": "Semantic table with nutrient name, value and unit; clearly label per-100g or per-serving basis from source data.",
+      "nutritionLocked": {
+        "title": "Unlock detailed nutrition",
+        "body": "Subscribe to view this product's nutritional values.",
+        "action": "View subscription",
+        "style": "Soft accent panel with lock icon and one primary action"
+      },
+      "missingData": "Display Not available for missing values. Never convert missing nutrition data into zero."
+    },
+    "subscription": {
+      "price": "Read the configured monthly plan and currency; do not invent an amount.",
+      "checkoutAction": "Continue to checkout",
+      "states": [
+        "free",
+        "checkout starting",
+        "checkout canceled",
+        "payment verification pending",
+        "active",
+        "error"
+      ],
+      "verification": "Show pending state after checkout return until backend confirms active access. Do not infer subscription activation solely from a redirect.",
+      "access": "Backend enforces nutritional-data access. Do not send restricted values to free clients and hide them with CSS."
+    },
+    "buttons": {
+      "primary": {
+        "background": "primaryButton",
+        "color": "#FFFFFF",
+        "radius": "pill",
+        "minHeightPx": 48,
+        "paddingInlinePx": 24
+      },
+      "secondary": {
+        "background": "#FFFFFF",
+        "border": "1px solid #E5E5E8",
+        "color": "text",
+        "radius": "pill",
+        "minHeightPx": 48
+      },
+      "disabled": "Keep label legible, prevent activation and show the reason where useful."
+    },
+    "footer": {
+      "content": [
+        "Open Food",
+        "Product data from Open Food Facts",
+        "Language selector if not already readily accessible"
+      ],
+      "style": "Small muted text, generous top spacing, subtle divider"
+    },
+    "clearSearch": {
+      "type": "button",
+      "accessibleName": "Clear search",
+      "icon": "x",
+      "sizePx": 44,
+      "appearance": "Transparent circular control inside the search field",
+      "behavior": "Clear input, return focus to input and reset results to initial state when committed; remove q consistently with existing routing."
+    },
+    "accountSummary": {
+      "avatarPx": 32,
+      "layout": "Avatar followed by two-line name/status block",
+      "name": "Demo user",
+      "badge": "Free or Subscribed from backend",
+      "secondary": "Localized renewal or membership date when supplied",
+      "mobile": "Compact but preserve access to status and language controls."
+    },
+    "pagination": {
+      "layout": "Centered Previous button, page label, Next button; 12px gap and 40px top margin",
+      "buttonHeightPx": 44,
+      "shape": "pill",
+      "previousDisabled": "page <= 1",
+      "nextDisabled": "page >= totalPages",
+      "behavior": "Update URL with existing page convention; keep query and locale; announce page change and move attention to results heading.",
+      "label": "Page {page} of {totalPages}"
+    },
+    "backLink": {
+      "icon": "arrow-left",
+      "fontSizePx": 14,
+      "minHeightPx": 44,
+      "behavior": "Restore previous query and page from existing navigation context."
+    },
+    "nutritionTable": {
+      "width": "100%",
+      "headerBackground": "surface",
+      "cellPadding": "12px 16px",
+      "rowBorder": "1px solid #E5E5E8",
+      "valueAlignment": "right",
+      "numberStyle": "tabular-nums",
+      "caption": "Nutritional values with explicit source basis",
+      "semantics": "Use table, caption, th with scope, and td.",
+      "mobile": "Allow labels to wrap; avoid page overflow."
+    },
+    "statusBadge": {
+      "fontSizePx": 12,
+      "fontWeight": 600,
+      "padding": "4px 8px",
+      "radius": "pill",
+      "free": "Neutral background and text",
+      "active": "Soft orange background with dark orange text",
+      "behavior": "Always include a text label."
+    },
+    "dialog": {
+      "usage": "Only if existing flows need a dialog",
+      "maxWidthPx": 480,
+      "paddingPx": 24,
+      "radiusPx": 24,
+      "backdrop": "rgba(13,12,34,0.4)",
+      "behavior": [
+        "Accessible name",
+        "Focus trap",
+        "Escape closes when safe",
+        "Return focus to trigger",
+        "Visible close button"
+      ]
+    },
+    "notification": {
+      "variants": [
+        "info",
+        "success",
+        "error"
+      ],
+      "radiusPx": 12,
+      "paddingPx": 16,
+      "layout": "Icon, title, explanatory text and optional action",
+      "behavior": "Keep actionable failures visible; do not rely on a transient toast for checkout or search errors."
+    },
+    "popover": {
+      "radiusPx": 12,
+      "paddingPx": 8,
+      "shadow": "0 8px 32px rgba(23,23,23,0.10)",
+      "itemMinHeightPx": 44,
+      "behavior": "Keyboard navigation appropriate to semantic control, outside click and Escape dismissal."
+    },
+    "icons": {
+      "style": "Consistent outline icon family",
+      "strokeWidthPx": 1.75,
+      "sizesPx": [
+        16,
+        20,
+        24
+      ],
+      "names": [
+        "search",
+        "x",
+        "chevron-down",
+        "arrow-left",
+        "chevron-left",
+        "chevron-right",
+        "user",
+        "lock",
+        "check",
+        "alert-circle",
+        "package"
+      ],
+      "behavior": "Decorative icons aria-hidden; icon-only buttons have accessible names."
+    }
+  },
+  "states": {
+    "initial": "Hero, search and existing recent searches; invite a first search without displaying fabricated products.",
+    "loading": "Image-and-text skeleton cards matching final geometry; mark results aria-busy and announce Searching products.",
+    "success": "Show query, available result count and product cards.",
+    "empty": "No products found for this query. Suggest checking spelling or trying a brand; keep search available.",
+    "error": "Explain that products could not be loaded and offer Retry while preserving query.",
+    "partial": "Render available product fields with explicit fallbacks.",
+    "localeFallback": "If selected-language product content is unavailable, show available source text and a short language-fallback note.",
+    "pagination": "Use accessible pagination or Load more only if backend supports it; preserve loaded products on errors and announce added results."
+  },
+  "accessibility": {
+    "target": "WCAG 2.2 AA",
+    "requirements": [
+      "Semantic header, nav, main and footer",
+      "One page-level h1",
+      "Visible search label",
+      "Full keyboard operation and visible focus",
+      "Minimum 44px touch targets for primary controls",
+      "Text contrast at least 4.5:1 for normal text",
+      "Do not communicate status by color alone",
+      "Use a polite live region for search status",
+      "Use lang on the document and update with language selection",
+      "No hover-only essential actions",
+      "Restore focus after closing any dialog",
+      "Support 200% zoom and 320px viewport without page overflow"
+    ]
+  },
+  "implementation": {
+    "target": "Existing Open Food frontend",
+    "suggestedComponents": [
+      "SiteHeader",
+      "DiscoveryHero",
+      "ProductSearch",
+      "RecentSearches",
+      "ResultsToolbar",
+      "ProductGrid",
+      "ProductCard",
+      "ProductDetail",
+      "NutritionTable",
+      "SubscriptionPanel",
+      "SearchStatus",
+      "SiteFooter"
+    ],
+    "styling": "Map tokens to CSS custom properties and Tailwind theme values. Reuse shared primitives for inputs, chips and buttons.",
+    "localization": "Store interface copy in translation dictionaries for en, nl, de and fr; allow longer labels to wrap.",
+    "scope": "This file specifies design only; it does not modify the application.",
+    "acceptanceChecks": [
+      "Review initial, loading, results, empty and error states",
+      "Verify mobile, tablet and desktop layouts",
+      "Navigate search and product detail entirely with keyboard",
+      "Verify all four languages with long labels",
+      "Confirm missing images and nutrition fields remain readable",
+      "Confirm free and active subscription experiences",
+      "Verify restricted nutrition is withheld by the backend",
+      "Check search state survives refresh and back navigation"
+    ],
+    "priority": [
+      "Apply global tokens and shared controls",
+      "Restyle header and search across routes",
+      "Replace result-card geometry and metadata spacing",
+      "Preserve and restyle pagination",
+      "Apply shared typography and surfaces to product and nutrition screens",
+      "Restyle subscription states",
+      "Add footer and responsive rules",
+      "Verify all existing functionality and state coverage"
+    ],
+    "fontNote": "Mona Sans is the observed source font. The proposed Inter/system stack is a deliberate substitute; use an appropriately supplied font asset if matching typography exactly.",
+    "noUnsupportedControls": "Do not add fake tabs, ratings, social actions or category filters. Retain their measured source styles as references only."
+  },
+  "scope": "Whole Open Food application: shared shell, discovery homepage, search results, product detail, nutrition access, subscription states and responsive shared components.",
+  "sourceExtraction": {
+    "method": "Read-only browser DOM inspection and screenshots",
+    "fontFamily": "\"Mona Sans\", \"Helvetica Neue\", Helvetica, Arial, sans-serif",
+    "palette": {
+      "navText": "#060318",
+      "bodyText": "#0D0C22",
+      "muted": "#6E6D7A",
+      "accent": "#EA4C89",
+      "searchSurface": "#F3F3F6",
+      "mediaSurface": "#ECEBF0",
+      "border": "#E7E7E9",
+      "banner": "rgba(244,215,243,0.3)"
+    },
+    "elements": [
+      {
+        "name": "navigationLink",
+        "sourceSelector": ".site-nav-main__link",
+        "measuredDesktopStyle": {
+          "fontSize": 14,
+          "fontWeight": 600,
+          "lineHeight": 30,
+          "padding": "0 16px"
+        },
+        "openFoodMapping": "Header links"
+      },
+      {
+        "name": "loginButton",
+        "sourceSelector": ".site-nav__login",
+        "measuredDesktopStyle": {
+          "height": 48,
+          "padding": "0 24px",
+          "radius": "pill",
+          "background": "#0D0C22",
+          "color": "#FFFFFF",
+          "fontSize": 14,
+          "fontWeight": 600
+        },
+        "openFoodMapping": "Subscription action"
+      },
+      {
+        "name": "announcement",
+        "sourceSelector": ".announcements__container",
+        "measuredDesktopStyle": {
+          "height": 62,
+          "radius": "pill",
+          "background": "rgba(244,215,243,0.3)",
+          "padding": "0 16px"
+        },
+        "openFoodMapping": "Optional contextual subscription notice"
+      },
+      {
+        "name": "announcementAction",
+        "sourceSelector": ".announcements__cta-btn",
+        "measuredDesktopStyle": {
+          "height": 32,
+          "fontSize": 12,
+          "fontWeight": 700,
+          "padding": "0 16px",
+          "radius": "pill"
+        },
+        "openFoodMapping": "Compact secondary action; enlarge touch target"
+      },
+      {
+        "name": "announcementClose",
+        "sourceSelector": ".announcements__close-btn",
+        "measuredDesktopStyle": {
+          "width": 31,
+          "height": 31,
+          "color": "#7B7194"
+        },
+        "openFoodMapping": "Dismiss button; enlarge to 44px"
+      },
+      {
+        "name": "hero",
+        "sourceSelector": ".home-header",
+        "measuredDesktopStyle": {
+          "padding": "40px 72px 60px",
+          "display": "flex",
+          "gap": 16
+        },
+        "openFoodMapping": "Homepage hero only"
+      },
+      {
+        "name": "heroHeading",
+        "sourceSelector": ".home-header__heading",
+        "measuredDesktopStyle": {
+          "fontSize": 52,
+          "fontWeight": 600,
+          "lineHeight": 62.4,
+          "color": "#0D0C22"
+        },
+        "openFoodMapping": "Large discovery headline"
+      },
+      {
+        "name": "heroTabs",
+        "sourceSelector": ".home-header__tabs-container",
+        "measuredDesktopStyle": {
+          "height": 44,
+          "display": "flex",
+          "gap": 8
+        },
+        "openFoodMapping": "Optional segmented control when meaningful modes exist"
+      },
+      {
+        "name": "heroList",
+        "sourceSelector": ".home-header__list",
+        "measuredDesktopStyle": {
+          "gap": 16,
+          "fontSize": 16
+        },
+        "openFoodMapping": "Brief feature list on homepage"
+      },
+      {
+        "name": "heroListItem",
+        "sourceSelector": ".home-header__list-item",
+        "measuredDesktopStyle": {
+          "gap": 10,
+          "height": 22
+        },
+        "openFoodMapping": "Feature icon and text"
+      },
+      {
+        "name": "heroMedia",
+        "sourceSelector": ".home-header-right__media-container",
+        "measuredDesktopStyle": {
+          "radius": 24,
+          "background": "#F3F3F6",
+          "width": 487,
+          "height": 430
+        },
+        "openFoodMapping": "Original food media panel"
+      },
+      {
+        "name": "mediaControl",
+        "sourceSelector": ".home-header-right__play-button",
+        "measuredDesktopStyle": {
+          "width": 40,
+          "height": 40,
+          "radius": "50%",
+          "background": "#FFFFFF",
+          "shadow": "0 2px 4px rgba(6,3,24,0.1)"
+        },
+        "openFoodMapping": "Only if animated media is included"
+      },
+      {
+        "name": "mediaBadge",
+        "sourceSelector": ".home-header-media__designer-badge",
+        "measuredDesktopStyle": {
+          "height": 40,
+          "radius": "pill",
+          "padding": "4px 16px 4px 4px",
+          "gap": 8,
+          "fontSize": 12,
+          "fontWeight": 500
+        },
+        "openFoodMapping": "Product-source badge if relevant"
+      },
+      {
+        "name": "searchSection",
+        "sourceSelector": ".home-search",
+        "measuredDesktopStyle": {
+          "padding": "0 72px",
+          "gap": 16
+        },
+        "openFoodMapping": "Search on homepage and results"
+      },
+      {
+        "name": "discoveryTabs",
+        "sourceSelector": ".home-search__search-type",
+        "measuredDesktopStyle": {
+          "height": 40,
+          "gap": 20
+        },
+        "openFoodMapping": "Optional only; food search currently has one mode"
+      },
+      {
+        "name": "searchWrapper",
+        "sourceSelector": ".site-nav-search__wrapper",
+        "measuredDesktopStyle": {
+          "height": 56,
+          "radius": "pill",
+          "background": "#F3F3F6",
+          "gap": 12,
+          "padding": "0 8px 0 0"
+        },
+        "openFoodMapping": "Global search control"
+      },
+      {
+        "name": "searchInput",
+        "sourceSelector": ".site-nav-search__input",
+        "measuredDesktopStyle": {
+          "height": 54,
+          "fontSize": 14,
+          "padding": "0 0 0 24px",
+          "border": "none"
+        },
+        "openFoodMapping": "Product query input"
+      },
+      {
+        "name": "searchSubmit",
+        "sourceSelector": ".site-nav-search__btn",
+        "measuredDesktopStyle": {
+          "width": 40,
+          "height": 40,
+          "radius": "50%",
+          "background": "#EA4C89",
+          "color": "#FFFFFF"
+        },
+        "openFoodMapping": "Orange 44px search action"
+      },
+      {
+        "name": "searchToolbar",
+        "sourceSelector": ".home-search__filter-container",
+        "measuredDesktopStyle": {
+          "height": 35,
+          "gap": 12
+        },
+        "openFoodMapping": "Recent searches and result controls"
+      },
+      {
+        "name": "suggestionChip",
+        "sourceSelector": ".pill2--white-dark",
+        "measuredDesktopStyle": {
+          "height": 31,
+          "padding": "0 16px",
+          "fontSize": 12,
+          "radius": "pill",
+          "border": "1px solid #E7E7E9"
+        },
+        "openFoodMapping": "Recent search chips with 44px hit area"
+      },
+      {
+        "name": "sortDropdown",
+        "sourceSelector": ".dropdown2",
+        "measuredDesktopStyle": {
+          "height": 35,
+          "radius": 8,
+          "fontSize": 12,
+          "fontWeight": 500,
+          "padding": "0 34px 0 14px"
+        },
+        "openFoodMapping": "Language or supported sort control"
+      },
+      {
+        "name": "grid",
+        "sourceSelector": ".shot2-item-grid",
+        "measuredDesktopStyle": {
+          "columns": 3,
+          "gap": 36,
+          "padding": "0 72px",
+          "columnWidthApprox": 350
+        },
+        "openFoodMapping": "Product grid"
+      },
+      {
+        "name": "card",
+        "sourceSelector": ".shot2-item",
+        "measuredDesktopStyle": {
+          "display": "flex",
+          "gap": 8,
+          "widthApprox": 350
+        },
+        "openFoodMapping": "Product card"
+      },
+      {
+        "name": "cardThumbnail",
+        "sourceSelector": ".shot2-item-thumbnail",
+        "measuredDesktopStyle": {
+          "radius": 12,
+          "widthApprox": 350,
+          "heightApprox": 262,
+          "aspectRatio": "4 / 3"
+        },
+        "openFoodMapping": "Package image container"
+      },
+      {
+        "name": "cardOverlay",
+        "sourceSelector": ".shot2-item-thumbnail__overlay",
+        "measuredDesktopStyle": {
+          "padding": 16
+        },
+        "openFoodMapping": "Optional detail affordance; essential action always visible"
+      },
+      {
+        "name": "cardOverlayActions",
+        "sourceSelector": ".shot2-item-thumbnail__actions",
+        "measuredDesktopStyle": {
+          "gap": 6
+        },
+        "openFoodMapping": "Do not add unsupported like/save actions"
+      },
+      {
+        "name": "cardMetadata",
+        "sourceSelector": ".shot2-item-details",
+        "measuredDesktopStyle": {
+          "height": 24,
+          "gap": 8,
+          "fontSize": 14
+        },
+        "openFoodMapping": "Brand metadata row; allow wrapping"
+      },
+      {
+        "name": "cardAuthor",
+        "sourceSelector": ".shot2-item-details__user-name",
+        "measuredDesktopStyle": {
+          "fontSize": 14,
+          "fontWeight": 500
+        },
+        "openFoodMapping": "Product brand text"
+      },
+      {
+        "name": "avatar",
+        "sourceSelector": ".photo",
+        "measuredDesktopStyle": {
+          "width": 24,
+          "height": 24,
+          "radius": "50%"
+        },
+        "openFoodMapping": "Account avatar; source has multiple avatar sizes"
+      },
+      {
+        "name": "cardStats",
+        "sourceSelector": ".shot2-item-stats__item",
+        "measuredDesktopStyle": {
+          "fontSize": 12,
+          "fontWeight": 500,
+          "gap": 4
+        },
+        "openFoodMapping": "Use actual product metadata only"
+      },
+      {
+        "name": "footer",
+        "sourceSelector": ".site-footer",
+        "measuredDesktopStyle": {
+          "background": "#FFFFFF"
+        },
+        "openFoodMapping": "Global footer"
+      },
+      {
+        "name": "footerCategoryStrip",
+        "sourceSelector": ".site-footer-marquee",
+        "measuredDesktopStyle": {
+          "padding": "60px 0 0"
+        },
+        "openFoodMapping": "Optional category discovery only if supported"
+      },
+      {
+        "name": "footerCategoryCards",
+        "sourceSelector": ".site-footer-marquee__grid",
+        "measuredDesktopStyle": {
+          "columnWidth": 204,
+          "gap": 32
+        },
+        "openFoodMapping": "Optional horizontal category cards"
+      },
+      {
+        "name": "footerCategoryImage",
+        "sourceSelector": ".site-footer-marquee-item__media",
+        "measuredDesktopStyle": {
+          "width": 204,
+          "height": 154,
+          "radius": 8
+        },
+        "openFoodMapping": "Optional category thumbnail"
+      },
+      {
+        "name": "footerUpper",
+        "sourceSelector": ".site-footer__upper",
+        "measuredDesktopStyle": {
+          "padding": "72px 0 44px",
+          "display": "flex"
+        },
+        "openFoodMapping": "Logo and useful app links"
+      },
+      {
+        "name": "footerLinks",
+        "sourceSelector": ".site-footer__link",
+        "measuredDesktopStyle": {
+          "fontSize": 14,
+          "fontWeight": 600
+        },
+        "openFoodMapping": "Footer navigation"
+      },
+      {
+        "name": "footerSocial",
+        "sourceSelector": ".site-footer__social-links",
+        "measuredDesktopStyle": {
+          "iconSize": 18,
+          "gap": 16
+        },
+        "openFoodMapping": "Only show actual relevant links"
+      },
+      {
+        "name": "footerLower",
+        "sourceSelector": ".site-footer__lower",
+        "measuredDesktopStyle": {
+          "padding": "44px 0",
+          "fontSize": 14,
+          "color": "#6E6D7A"
+        },
+        "openFoodMapping": "Attribution and secondary information"
+      }
+    ]
+  },
+  "targetInspection": {
+    "url": "http://localhost:3000/?q=nutella",
+    "observedElements": [
+      "Open Food image logo",
+      "Four-language selector",
+      "Demo user avatar",
+      "Subscribed badge and renewal text",
+      "Search heading",
+      "Labeled query input with nutella value",
+      "Clear search button",
+      "Search button",
+      "Recent-search chips with repeated terms",
+      "631 results at inspection time",
+      "Product image/name/brand cards",
+      "Missing image placeholder",
+      "Previous and Next pagination",
+      "Page 1 of 64 at inspection time",
+      "Product detail link preserving q",
+      "Back to search link on product page"
+    ],
+    "note": "Counts and account state are observations, not fixed application copy."
+  },
+  "screens": {
+    "home": {
+      "route": "/",
+      "order": [
+        "SiteHeader",
+        "DiscoveryHero",
+        "ProductSearch",
+        "RecentSearches",
+        "InitialSearchPrompt",
+        "SiteFooter"
+      ],
+      "hero": "Large Dribbble-inspired headline; search before optional media on mobile."
+    },
+    "results": {
+      "route": "/?q={query}",
+      "order": [
+        "SiteHeader",
+        "CompactHeading",
+        "ProductSearch",
+        "RecentSearches",
+        "ResultsToolbar",
+        "ProductGrid",
+        "Pagination",
+        "SiteFooter"
+      ],
+      "heading": "Results for “{query}”",
+      "hero": "Hide the large marketing hero when q is present.",
+      "urlState": "Use existing page and locale parameter conventions; preserve q on refresh, pagination and back navigation.",
+      "count": "Render returned count using locale-aware formatting, never a hardcoded 631."
+    },
+    "product": {
+      "route": "/products/{barcode}?q={query}",
+      "order": [
+        "SiteHeader",
+        "BackToSearch",
+        "ProductIdentity",
+        "NutritionSection",
+        "SourceAttribution",
+        "SiteFooter"
+      ],
+      "desktop": "Two-column image and details; nutrition below identity.",
+      "mobile": "Single-column image, title, brand, nutrition.",
+      "unknownProduct": "Friendly not-found panel and back-to-search link."
+    },
+    "subscriptionFree": {
+      "presentation": "Contextual nutrition panel or existing subscription screen",
+      "order": [
+        "PlanHeading",
+        "MonthlyPrice",
+        "Benefits",
+        "CheckoutAction",
+        "ErrorStatus"
+      ],
+      "price": "Backend-configured price and currency."
+    },
+    "subscriptionActive": {
+      "presentation": "Header badge and unlocked nutrition panel",
+      "order": [
+        "ActiveBadge",
+        "RenewalTextWhenAvailable",
+        "NutritionTable"
+      ],
+      "behavior": "Reflect backend state."
+    },
+    "checkoutReturn": {
+      "presentation": "Existing return route or inline subscription panel",
+      "states": [
+        "pending verification",
+        "active",
+        "canceled",
+        "error"
+      ],
+      "behavior": "Preserve search context; poll only as appropriate for the existing backend flow; offer retry after failure."
+    },
+    "appError": {
+      "order": [
+        "SiteHeader",
+        "ErrorHeading",
+        "Explanation",
+        "RetryOrHomeAction",
+        "SiteFooter"
+      ]
+    }
+  },
+  "interactionMatrix": {
+    "button": {
+      "default": "Use variant tokens",
+      "hover": "Darken background without changing dimensions",
+      "focusVisible": "2px orange outline with 3px offset",
+      "pressed": "Slightly darker fill",
+      "loading": "Stable width, progress indicator and busy label",
+      "disabled": "Native disabled semantics where applicable"
+    },
+    "input": {
+      "default": "Soft neutral pill surface",
+      "hover": "Subtle border contrast",
+      "focus": "Visible orange outline",
+      "invalid": "Error border plus explanatory text linked with aria-describedby",
+      "filled": "Show clear action"
+    },
+    "card": {
+      "default": "Image and readable metadata",
+      "hover": "Subtle background or shadow transition",
+      "focusVisible": "Outline entire link",
+      "mobile": "Do not depend on hover"
+    },
+    "link": {
+      "hover": "Underline or contrasting color",
+      "focusVisible": "Visible outline"
+    }
+  }
+}

@@ -8,6 +8,12 @@ interface NutritionPanelProps {
   nutrition: NutritionInfo;
 }
 
+interface Row {
+  label: string;
+  value: number | null;
+  unit: string;
+}
+
 // Open Food Facts' own A–E scale, dark green through red. Written out rather
 // than computed so Tailwind's scanner sees every class literally.
 const NUTRI_SCORE_COLORS: Record<string, string> = {
@@ -17,12 +23,6 @@ const NUTRI_SCORE_COLORS: Record<string, string> = {
   d: 'bg-orange-500 text-white',
   e: 'bg-red-600 text-white',
 };
-
-interface Row {
-  label: string;
-  value: number | null;
-  unit: string;
-}
 
 export function NutritionPanel({ nutrition }: NutritionPanelProps) {
   const { locale, t } = useLocale();
@@ -39,44 +39,69 @@ export function NutritionPanel({ nutrition }: NutritionPanelProps) {
   ];
 
   return (
-    <div className="flex w-full flex-col gap-3 border-t border-border pt-5">
-      <div className="flex items-baseline justify-between gap-4">
-        <h3 className="text-sm font-semibold tracking-tight">{t.nutritionTitle}</h3>
-        {nutrition.basis ? (
-          <span className="text-xs text-muted-foreground">{t.nutritionBasis(nutrition.basis)}</span>
+    <section className="flex w-full flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-base font-semibold tracking-tight">{t.nutritionTitle}</h2>
+
+        {/* Derived from the nutriments below, so it belongs behind the same
+            paywall rather than on the free product detail. */}
+        {nutrition.nutriScore ? (
+          <div className="flex items-center gap-2">
+            <span className="type-caption text-muted-foreground">{t.nutriScoreLabel}</span>
+            <span
+              className={[
+                'grid size-7 place-items-center rounded-md text-xs font-bold uppercase',
+                NUTRI_SCORE_COLORS[nutrition.nutriScore] ?? 'bg-muted text-muted-foreground',
+              ].join(' ')}
+            >
+              {nutrition.nutriScore}
+            </span>
+          </div>
         ) : null}
       </div>
 
-      {/* Derived from the nutriments below, so it belongs behind the same
-          paywall rather than on the free product detail. */}
-      {nutrition.nutriScore ? (
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">{t.nutriScoreLabel}</span>
-          <span
-            className={[
-              'grid size-6 place-items-center rounded-md text-xs font-bold uppercase',
-              NUTRI_SCORE_COLORS[nutrition.nutriScore] ?? 'bg-muted text-muted-foreground',
-            ].join(' ')}
-          >
-            {nutrition.nutriScore}
-          </span>
-        </div>
-      ) : null}
-      <dl className="flex flex-col divide-y divide-border text-sm">
-        {rows.map((row) => (
-          <div key={row.label} className="flex items-baseline justify-between gap-6 py-2">
-            <dt className="text-muted-foreground">{row.label}</dt>
-            <dd
-              className={[
-                'tabular-figures shrink-0 text-right',
-                row.value === null ? 'text-muted-foreground' : 'font-medium',
-              ].join(' ')}
-            >
-              {row.value === null ? '—' : `${formatNumber(row.value, locale)} ${row.unit}`}
-            </dd>
-          </div>
-        ))}
-      </dl>
-    </div>
+      {/* A real table, not a stack of divs: these are label/value pairs with
+          a shared basis, and a screen reader should be able to navigate them
+          as such. The wrapper scrolls rather than letting the page overflow
+          on a narrow viewport. */}
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-sm">
+          <caption className="type-caption pb-3 text-left text-muted-foreground">
+            {nutrition.basis ? t.nutritionBasis(nutrition.basis) : t.nutritionTitle}
+          </caption>
+          <thead>
+            <tr className="bg-muted text-left">
+              <th scope="col" className="rounded-l-lg px-4 py-3 font-medium">
+                {t.nutrientColumn}
+              </th>
+              <th scope="col" className="rounded-r-lg px-4 py-3 text-right font-medium">
+                {t.amountColumn}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.label} className="border-b border-border last:border-0">
+                <th scope="row" className="px-4 py-3 text-left font-normal text-muted-foreground">
+                  {row.label}
+                </th>
+                <td
+                  className={[
+                    'tabular-figures px-4 py-3 text-right',
+                    // Missing data reads as missing. Never rendered as 0,
+                    // which would be a claim the source never made.
+                    row.value === null ? 'text-muted-foreground' : 'font-semibold',
+                  ].join(' ')}
+                >
+                  {row.value === null
+                    ? t.notAvailable
+                    : `${formatNumber(row.value, locale)} ${row.unit}`}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }

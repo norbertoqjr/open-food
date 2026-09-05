@@ -1,6 +1,7 @@
 'use client';
 
 import type { ProductSummary } from '@open-food/shared';
+import { ImageOff } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useLocale } from '@/lib/locale-context';
@@ -24,39 +25,57 @@ export function ProductCard({
   }`;
 
   return (
+    // One link wrapping the whole card: no nested interactive elements, so
+    // there is a single tab stop and the entire tile is the target. The
+    // "view product" affordance is text inside it, not a second control.
     <Link
       href={href}
-      className={[
-        'group flex flex-col gap-2.5 rounded-xl outline-none',
-        'focus-visible:ring-3 focus-visible:ring-ring/50',
-      ].join(' ')}
+      className="group/card flex flex-col gap-3 rounded-2xl outline-none"
     >
       <div
         className={[
-          'flex aspect-square items-center justify-center overflow-hidden rounded-xl',
-          'border border-border bg-muted transition-colors group-hover:border-foreground/20',
+          'flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl',
+          'bg-muted p-6',
+          'transition-colors duration-[var(--duration-normal)] ease-[var(--ease)]',
+          'group-hover/card:bg-surface-hover',
         ].join(' ')}
       >
         {imageUrl ? (
           <Image
             src={imageUrl}
             alt={name ?? t.unnamedProduct}
-            width={280}
-            height={280}
-            className={[
-              'h-full w-full object-contain transition-transform duration-300',
-              'ease-out group-hover:scale-[1.03]',
-            ].join(' ')}
+            width={320}
+            height={240}
+            loading="lazy"
+            // contain, never cover: cropping a package hides exactly the
+            // label a shopper is trying to read.
+            className="h-full w-full object-contain"
           />
         ) : (
-          <span className="text-xs text-muted-foreground">{t.noImage}</span>
+          <span className="flex flex-col items-center gap-2 text-muted-foreground">
+            <ImageOff className="size-6" aria-hidden />
+            <span className="type-caption">{t.noImage}</span>
+          </span>
         )}
       </div>
-      <div className="flex flex-col gap-0.5">
-        <p className="line-clamp-2 text-sm font-medium leading-snug">
+
+      <div className="flex flex-col gap-1">
+        <p className="line-clamp-2 text-base font-semibold leading-snug">
           {name ?? t.unnamedProduct}
         </p>
-        <p className="line-clamp-1 text-xs text-muted-foreground">{brand ?? t.unknownBrand}</p>
+        <p className="type-caption line-clamp-1 text-muted-foreground">
+          {brand ?? t.unknownBrand}
+        </p>
+        {/* Underlined on hover rather than appearing on hover: the spec
+            requires the affordance to be readable without pointing at it. */}
+        <span
+          className={[
+            'type-caption mt-1 font-medium text-foreground underline-offset-4',
+            'group-hover/card:underline',
+          ].join(' ')}
+        >
+          {t.viewProduct}
+        </span>
       </div>
     </Link>
   );

@@ -2,11 +2,9 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { searchFormSchema, type SearchFormValues } from '@open-food/shared';
-import { X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLocale } from '@/lib/locale-context';
 
@@ -19,6 +17,10 @@ interface SearchFormProps {
 // react-hook-form directly, not shadcn's Form wrapper: the Base UI registry
 // this project initialized with does not ship a working Form component (see
 // the shadcn-nextjs skill). A single text field needs no Controller either.
+//
+// The field is a pill on a tinted surface with a circular submit, per
+// docs/design.json -- the one control that spends the brand colour, so the
+// way into the app is unambiguous.
 export function SearchForm({ query, onSearch, isSearching }: SearchFormProps) {
   const { t } = useLocale();
   const {
@@ -56,46 +58,72 @@ export function SearchForm({ query, onSearch, isSearching }: SearchFormProps) {
   return (
     <form
       onSubmit={handleSubmit((values) => onSearch(values.query))}
-      className="flex w-full max-w-xl flex-col gap-2"
+      className="flex w-full max-w-2xl flex-col gap-2"
       noValidate
     >
-      <Label htmlFor="search-query" className="text-xs font-medium text-muted-foreground">
+      <Label htmlFor="search-query" className="type-caption font-medium text-muted-foreground">
         {t.searchLabel}
       </Label>
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Input
-            id="search-query"
-            placeholder={t.searchPlaceholder}
-            autoComplete="off"
-            aria-invalid={Boolean(errors.query)}
-            className="h-10 w-full rounded-lg pr-9"
-            {...register('query')}
-          />
-          {hasText ? (
-            <button
-              type="button"
-              onClick={handleClear}
-              aria-label={t.clearSearch}
-              className={[
-                'absolute inset-y-0 right-0 grid w-9 cursor-pointer place-items-center',
-                'rounded-r-lg text-muted-foreground outline-none transition-colors',
-                'hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50',
-              ].join(' ')}
-            >
-              <X className="size-4" aria-hidden />
-            </button>
-          ) : null}
-        </div>
-        <Button type="submit" size="lg" disabled={isSearching} className="h-10 px-5">
-          {isSearching ? t.searchingButton : t.searchButton}
-        </Button>
+
+      <div
+        className={[
+          'flex min-h-[3.75rem] items-center gap-2 rounded-full border border-border',
+          'bg-muted py-2 pr-2 pl-6',
+          'transition-colors duration-[var(--duration-normal)] ease-[var(--ease)]',
+          'focus-within:border-brand focus-within:bg-background',
+          errors.query ? 'border-destructive' : '',
+        ].join(' ')}
+      >
+        <input
+          id="search-query"
+          type="text"
+          placeholder={t.searchPlaceholder}
+          autoComplete="off"
+          aria-invalid={Boolean(errors.query)}
+          aria-describedby={errors.query ? 'search-query-error' : undefined}
+          className={[
+            'min-w-0 flex-1 bg-transparent text-base text-foreground outline-none',
+            'placeholder:text-muted-foreground',
+          ].join(' ')}
+          {...register('query')}
+        />
+
+        {hasText ? (
+          <button
+            type="button"
+            onClick={handleClear}
+            aria-label={t.clearSearch}
+            className={[
+              'grid size-11 shrink-0 cursor-pointer place-items-center rounded-full',
+              'text-muted-foreground outline-none',
+              'transition-colors duration-[var(--duration-fast)] ease-[var(--ease)]',
+              'hover:bg-surface-hover hover:text-foreground',
+            ].join(' ')}
+          >
+            <X className="size-5" aria-hidden />
+          </button>
+        ) : null}
+
+        <button
+          type="submit"
+          disabled={isSearching}
+          aria-label={t.searchSubmitLabel}
+          className={[
+            'grid size-11 shrink-0 cursor-pointer place-items-center rounded-full',
+            'bg-brand text-on-brand outline-none',
+            'transition-colors duration-[var(--duration-normal)] ease-[var(--ease)]',
+            'hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-45',
+          ].join(' ')}
+        >
+          <Search className={isSearching ? 'size-5 animate-pulse' : 'size-5'} aria-hidden />
+        </button>
       </div>
+
       {/* The shared Zod schema's own message is API-facing English only;
           the visible error here is always the current locale's translation,
           shown whenever validation fails regardless of that message's text. */}
       {errors.query ? (
-        <p role="alert" className="text-sm text-destructive">
+        <p id="search-query-error" role="alert" className="type-caption text-destructive">
           {t.searchRequiredError}
         </p>
       ) : null}

@@ -3,8 +3,18 @@ import type { en } from './en';
 export const de = {
   appTitle: 'Open Food',
   appTagline: 'Suchen Sie verpackte Lebensmittel nach Name oder Marke.',
+  heroHeadingLead: 'Entdecken Sie, was in',
+  heroHeadingAccent: 'Ihrem Essen steckt.',
+  heroDescription: (
+    'Suchen Sie verpackte Lebensmittel nach Name oder Marke. Sehen Sie '
+    + 'Produktinformationen und schalten Sie detaillierte Nährwerte frei.'
+  ),
+  searchSubmitLabel: 'Produkte suchen',
+  viewProduct: 'Produkt ansehen',
+  footerAttribution: 'Produktdaten von',
+  footerNote: 'Eine Demo-Anwendung. Nährwerte erfordern ein aktives Abonnement.',
   searchLabel: 'Verpackte Lebensmittel suchen',
-  searchPlaceholder: 'z. B. nutella',
+  searchPlaceholder: 'Versuchen Sie ein Produkt oder eine Marke, z. B. Nutella',
   searchButton: 'Suchen',
   clearSearch: 'Suche zurücksetzen',
   searchingButton: 'Suche läuft…',
@@ -49,6 +59,12 @@ export const de = {
   ecoScoreLabel: 'Eco-Score',
   nutriScoreLabel: 'Nutri-Score',
   nutritionTitle: 'Nährwerte',
+  nutritionLockedTitle: 'Detaillierte Nährwerte freischalten',
+  nutritionLockedBody: 'Abonnieren Sie, um die Nährwerte dieses Produkts zu sehen.',
+  continueToCheckout: 'Weiter zur Kasse',
+  nutrientColumn: 'Nährstoff',
+  amountColumn: 'Menge',
+  notAvailable: 'Nicht verfügbar',
   nutritionBasis: (basis: string) => `Pro ${basis}`,
   nutritionUnavailable: 'Keine Nährwerte für dieses Produkt verfügbar.',
   energyLabel: 'Energie',

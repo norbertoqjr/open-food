@@ -7,6 +7,7 @@ import {
 } from 'react';
 import { ProductCard } from '@/components/product-card';
 import { RecentSearchesList } from '@/components/recent-searches-list';
+import { DiscoveryHero } from '@/components/discovery-hero';
 import { SearchForm } from '@/components/search-form';
 import { SearchPagination } from '@/components/search-pagination';
 import { SubscribeBanner } from '@/components/subscribe-banner';
@@ -15,6 +16,19 @@ import { formatNumber } from '@/lib/format-number';
 import { ApiError, getRecentSearches, searchProducts } from '@/lib/api';
 import { useLocale } from '@/lib/locale-context';
 import { DEFAULT_PAGE, buildSearchHref, parsePage } from '@/lib/search-url';
+
+// 1 / 2 / 3 / 4 columns with a 28px gutter, per docs/design.json.
+// Shared page shell: same max width and gutters as the product route, so
+// the two never drift.
+const SHELL = [
+  'mx-auto w-full max-w-[1440px] flex-1 px-5 py-10',
+  'sm:px-8 sm:py-14 lg:px-16 lg:py-[72px]',
+].join(' ');
+
+const PRODUCT_GRID = [
+  'grid grid-cols-1 gap-7',
+  'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
+].join(' ');
 
 type SearchState = { status: 'idle' }
   | { status: 'loading' }
@@ -101,25 +115,22 @@ function HomeSearch() {
     };
   }, [query, page, locale, t.searchFailedError]);
 
+  // The full pitch only on arrival: once results are on screen the hero
+  // collapses so the grid is not pushed below the fold on every search.
+  const hasResults = state.status !== 'idle';
+
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
-      <div className="flex flex-col gap-8">
-        <div className="flex flex-col gap-5">
-          <p
-            className={[
-              'max-w-[55ch] text-pretty text-2xl font-semibold',
-              'leading-snug tracking-tight',
-            ].join(' ')}
-          >
-            {t.appTagline}
-          </p>
-          <SubscribeBanner />
+    <main className={SHELL}>
+      <div className="flex flex-col gap-10">
+        <div className="flex flex-col gap-6">
+          <DiscoveryHero compact={hasResults} />
           <SearchForm
             query={query}
             onSearch={handleSearch}
             isSearching={state.status === 'loading'}
           />
           <RecentSearchesList items={recentSearches} onSelect={handleSearch} />
+          <SubscribeBanner />
         </div>
 
         <div aria-live="polite" aria-busy={state.status === 'loading'}>
@@ -130,16 +141,11 @@ function HomeSearch() {
           ) : null}
 
           {state.status === 'loading' ? (
-            <div
-              className={[
-                'grid grid-cols-2 gap-4 border-t border-border pt-8',
-                'sm:grid-cols-3 md:grid-cols-4',
-              ].join(' ')}
-            >
+            <div className={PRODUCT_GRID}>
               {Array.from({ length: 8 }, (_, index) => (
                 <div key={index} className="flex flex-col gap-3">
-                  <Skeleton className="aspect-square rounded-xl" />
-                  <Skeleton className="h-3.5 w-4/5 rounded-sm" />
+                  <Skeleton className="aspect-[4/3] rounded-2xl" />
+                  <Skeleton className="h-4 w-4/5 rounded-sm" />
                   <Skeleton className="h-3 w-2/5 rounded-sm" />
                 </div>
               ))}
@@ -149,24 +155,30 @@ function HomeSearch() {
           {state.status === 'error' ? (
             <p
               role="alert"
-              className="border-t border-border pt-8 text-sm font-medium text-destructive"
+              className={[
+                'rounded-2xl bg-destructive-soft px-5 py-4',
+                'text-sm font-medium text-destructive',
+              ].join(' ')}
             >
               {state.message}
             </p>
           ) : null}
 
           {state.status === 'success' && state.items.length === 0 ? (
-            <p className="border-t border-border pt-8 text-sm text-muted-foreground">
+            <p className="rounded-2xl bg-muted px-5 py-4 text-sm text-muted-foreground">
               {t.noResultsFor(query)}
             </p>
           ) : null}
 
           {state.status === 'success' && state.items.length > 0 ? (
-            <div className="flex flex-col gap-4 border-t border-border pt-6">
-              <p className="tabular-figures text-xs text-muted-foreground">
+            <div className="flex flex-col gap-6">
+              {/* Results toolbar: the count and the query it belongs to. No
+                  sort or filter controls -- the search API supports neither,
+                  and a control that does nothing is worse than none. */}
+              <p className="type-caption tabular-figures text-muted-foreground">
                 {t.resultsCount(formatNumber(state.total, locale))}
               </p>
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+              <div className={PRODUCT_GRID}>
                 {state.items.map((item) => (
                   <ProductCard
                     key={item.id}
@@ -194,7 +206,7 @@ function HomeSearch() {
 // route opts out of static rendering.
 export default function Home() {
   return (
-    <Suspense fallback={<main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10" />}>
+    <Suspense fallback={<main className={SHELL} />}>
       <HomeSearch />
     </Suspense>
   );

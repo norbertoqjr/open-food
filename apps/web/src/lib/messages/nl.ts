@@ -3,8 +3,18 @@ import type { en } from './en';
 export const nl = {
   appTitle: 'Open Food',
   appTagline: 'Zoek verpakte levensmiddelen op naam of merk.',
+  heroHeadingLead: 'Ontdek wat er in',
+  heroHeadingAccent: 'je eten zit.',
+  heroDescription: (
+    'Zoek verpakte levensmiddelen op naam of merk. Bekijk productinformatie '
+    + 'en ontgrendel gedetailleerde voedingswaarden.'
+  ),
+  searchSubmitLabel: 'Producten zoeken',
+  viewProduct: 'Product bekijken',
+  footerAttribution: 'Productgegevens van',
+  footerNote: 'Een demo-applicatie. Voedingswaarden vereisen een actief abonnement.',
   searchLabel: 'Zoek verpakte levensmiddelen',
-  searchPlaceholder: 'bijv. nutella',
+  searchPlaceholder: 'Probeer een product of merk, zoals Nutella',
   searchButton: 'Zoeken',
   clearSearch: 'Zoekopdracht wissen',
   searchingButton: 'Zoeken…',
@@ -49,6 +59,12 @@ export const nl = {
   ecoScoreLabel: 'Eco-Score',
   nutriScoreLabel: 'Nutri-Score',
   nutritionTitle: 'Voedingswaarden',
+  nutritionLockedTitle: 'Ontgrendel gedetailleerde voedingswaarden',
+  nutritionLockedBody: 'Neem een abonnement om de voedingswaarden van dit product te zien.',
+  continueToCheckout: 'Doorgaan naar afrekenen',
+  nutrientColumn: 'Voedingsstof',
+  amountColumn: 'Hoeveelheid',
+  notAvailable: 'Niet beschikbaar',
   nutritionBasis: (basis: string) => `Per ${basis}`,
   nutritionUnavailable: 'Geen voedingswaarden beschikbaar voor dit product.',
   energyLabel: 'Energie',
