@@ -23,7 +23,7 @@
     "prisma:seed": "prisma db seed --schema prisma/schema.prisma"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
+    "@eslint/js": "^9.39.5",
     "@prisma/adapter-mariadb": "^7.10.0",
     "concurrently": "^10.0.5",
     "dotenv": "^17.4.2",
