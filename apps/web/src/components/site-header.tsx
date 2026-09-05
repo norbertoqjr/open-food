@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { CurrentUser } from '@/components/current-user';
 import { LocaleSelector } from '@/components/locale-selector';
 import { useLocale } from '@/lib/locale-context';
 
@@ -20,7 +21,10 @@ export function SiteHeader() {
             {t.appTitle}
           </Link>
         </h1>
-        <LocaleSelector />
+        <div className="flex items-center gap-4">
+          <LocaleSelector />
+          <CurrentUser />
+        </div>
       </div>
     </header>
   );

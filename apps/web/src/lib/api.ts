@@ -1,5 +1,6 @@
 import type {
   CheckoutSessionResponse,
+  CurrentUserResponse,
   Locale,
   NutritionInfo,
   ProductSummary,
@@ -71,6 +72,10 @@ export function getRecentSearches(): Promise<RecentSearchItem[]> {
 
 export function getNutrition(id: string): Promise<NutritionInfo> {
   return apiFetch<NutritionInfo>(`/products/${encodeURIComponent(id)}/nutrition`);
+}
+
+export function getCurrentUser(): Promise<CurrentUserResponse> {
+  return apiFetch<CurrentUserResponse>('/me');
 }
 
 export function getSubscriptionStatus(): Promise<SubscriptionStatusResponse> {

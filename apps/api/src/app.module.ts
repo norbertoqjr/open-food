@@ -8,6 +8,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
 import { ProductsModule } from './products/products.module.js';
 import { RecentSearchesModule } from './recent-searches/recent-searches.module.js';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module.js';
+import { CurrentUserModule } from './users/current-user.module.js';
 import { UsersModule } from './users/users.module.js';
 
 @Module({
@@ -18,6 +19,7 @@ import { UsersModule } from './users/users.module.js';
     }),
     PrismaModule,
     UsersModule,
+    CurrentUserModule,
     ProductsModule,
     RecentSearchesModule,
     SubscriptionsModule,
