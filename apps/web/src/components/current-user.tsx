@@ -1,45 +1,32 @@
 'use client';
 
-import type { CurrentUserResponse } from '@open-food/shared';
 import { User } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getCurrentUser } from '@/lib/api';
 import { useLocale } from '@/lib/locale-context';
+import { useSubscription } from '@/lib/subscription-context';
+import { useCheckout } from '@/lib/use-checkout';
+
+const BADGE_BASE = 'ml-1.5 rounded-full px-1.5 py-0.5 text-[0.65rem] font-semibold';
 
 // The app has no sign-in, so this is not a session indicator: it makes the
 // single demo user every request acts as, and the subscription that gates
 // nutrition data, visible instead of implicit.
 export function CurrentUser() {
   const { t, locale } = useLocale();
-  const [user, setUser] = useState<CurrentUserResponse | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    getCurrentUser()
-      .then((next) => {
-        if (!cancelled) setUser(next);
-      })
-      .catch(() => {
-        if (!cancelled) setFailed(true);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const {
+    user, active, loading, failed,
+  } = useSubscription();
+  const { start, state } = useCheckout();
 
   // An unreachable API already surfaces as an error on the page itself;
   // repeating it in the header would be noise.
   if (failed) return null;
 
-  if (!user) {
+  if (loading || !user) {
     return <Skeleton className="h-8 w-32 rounded-full" aria-hidden />;
   }
 
-  const { active, cancelAtPeriodEnd, currentPeriodEnd } = user.subscription;
+  const { cancelAtPeriodEnd, currentPeriodEnd } = user.subscription;
   const formatDate = (iso: string) => new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
   }).format(new Date(iso));
@@ -54,10 +41,7 @@ export function CurrentUser() {
   }
 
   return (
-    <div
-      className="flex items-center gap-2.5"
-      title={`${t.signedInAs} ${user.id}`}
-    >
+    <div className="flex items-center gap-2.5" title={`${t.signedInAs} ${user.id}`}>
       {/*
         An icon rather than initials: "demo-user" yields "DE", which sits next
         to the language picker and reads as a German locale badge.
@@ -66,9 +50,7 @@ export function CurrentUser() {
         aria-hidden
         className={[
           'grid size-8 shrink-0 place-items-center rounded-full',
-          active
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-muted text-muted-foreground',
+          active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
         ].join(' ')}
       >
         <User className="size-4" />
@@ -81,16 +63,31 @@ export function CurrentUser() {
             {' '}
           </span>
           {t.demoUserName}
-          <span
-            className={[
-              'ml-1.5 rounded-full px-1.5 py-0.5 text-[0.65rem] font-semibold',
-              active
-                ? 'bg-primary/12 text-primary'
-                : 'bg-muted text-muted-foreground',
-            ].join(' ')}
-          >
-            {active ? t.planSubscribed : t.planFree}
-          </span>
+          {/*
+            While unsubscribed the badge is the persistent way into checkout
+            from any page; once subscribed it is only a status label, so it
+            stops being interactive rather than becoming a no-op button.
+          */}
+          {active ? (
+            <span className={`${BADGE_BASE} bg-primary/12 text-primary`}>
+              {t.planSubscribed}
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={start}
+              disabled={state === 'redirecting'}
+              className={[
+                BADGE_BASE,
+                'cursor-pointer bg-muted text-muted-foreground outline-none transition-colors',
+                'hover:bg-primary hover:text-primary-foreground',
+                'focus-visible:ring-3 focus-visible:ring-ring/50',
+                'disabled:cursor-default disabled:opacity-60',
+              ].join(' ')}
+            >
+              {state === 'redirecting' ? t.redirectingToCheckout : t.planFree}
+            </button>
+          )}
         </span>
         <span className="tabular-figures text-[0.7rem] text-muted-foreground">
           {detail}

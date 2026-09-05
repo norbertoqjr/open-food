@@ -18,6 +18,10 @@ export const fr = {
   noResultsFor: (query: string) => `Aucun résultat pour « ${query} ».`,
   resultsCount: (formattedTotal: string) => `${formattedTotal} résultats`,
   subscribePrompt: 'Abonnez-vous pour voir les informations nutritionnelles de ce produit.',
+  subscribeGlobalTitle: 'Débloquer les valeurs nutritionnelles',
+  subscribeGlobalPrompt: (
+    "Abonnez-vous pour voir l'énergie, les lipides, les sucres et plus encore."
+  ),
   subscribeButton: "S'abonner",
   redirectingToCheckout: 'Redirection vers le paiement…',
   checkoutFailedError: 'Impossible de démarrer le paiement. Réessayez.',
@@ -63,6 +67,7 @@ export const fr = {
   subscriptionCancelTitle: 'Paiement annulé',
   subscriptionCancelMessage: "Aucune modification n'a été apportée à votre abonnement.",
   backToSearch: 'Retour à la recherche',
+  backToProduct: 'Retour au produit',
   selectLanguageLabel: 'Choisir la langue',
   signedInAs: 'Connecté en tant que',
   demoUserName: 'Utilisateur démo',

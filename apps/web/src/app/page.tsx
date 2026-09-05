@@ -8,6 +8,7 @@ import {
 import { ProductCard } from '@/components/product-card';
 import { RecentSearchesList } from '@/components/recent-searches-list';
 import { SearchForm } from '@/components/search-form';
+import { SubscribeBanner } from '@/components/subscribe-banner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatNumber } from '@/lib/format-number';
 import { ApiError, getRecentSearches, searchProducts } from '@/lib/api';
@@ -86,6 +87,7 @@ function HomeSearch() {
           >
             {t.appTagline}
           </p>
+          <SubscribeBanner />
           <SearchForm
             query={query}
             onSearch={handleSearch}
