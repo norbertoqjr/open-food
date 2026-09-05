@@ -27,14 +27,16 @@ A responsive search application for packaged foods, backed by [Open Food Facts](
 
 **Backend** (`apps/api`) is organized by feature module, each with its own controller/service:
 
-- `open-food-facts/` — the only place that talks to Open Food Facts; maps every upstream response onto an explicit allowlist of fields (`ProductSummary`, `NutritionInfo`) before anything else in the app sees it. Requested-locale product names fall back through `product_name_<locale>` → generic `product_name` → `product_name_en` → `null`, never fabricating a translation.
+- `open-food-facts/` — the only place that talks to Open Food Facts; maps every upstream response onto an explicit allowlist of fields (`ProductSummary`, `ProductDetail`, `NutritionInfo`) before anything else in the app sees it. Prose fields resolve through `<field>_<locale>` → the submitter's own text → `<field>_en` → `null`, never fabricating a translation. The mapper also filters upstream noise that would otherwise render as content: the literal `en:null` category a product with no category produces, `unknown`/`not-applicable` grades, and a generic name that merely repeats the product name or brand.
 - `products/` — `GET /products/search`, `GET /products/:id`, and the guarded `GET /products/:id/nutrition`.
-- `recent-searches/` — persists and lists the demo user's search history.
-- `users/` — resolves the one demo user server-side; no endpoint accepts a client-supplied user ID.
+- `recent-searches/` — persists and lists the demo user's search history. Repeating the search you just ran bumps the existing row rather than adding a duplicate; a non-consecutive repeat still records, so `a → b → a` keeps both.
+- `users/` — resolves the one demo user server-side and exposes it at `GET /me` (id, member-since, subscription status). No endpoint accepts a client-supplied user ID, so there is nothing to tamper with.
 - `stripe/`, `subscriptions/`, `billing/` — the Stripe client wrapper, webhook processing and entitlement state, and the checkout/status/webhook HTTP endpoints, respectively.
 - `common/` — a generic `ZodValidationPipe` used across controllers.
 
-**Frontend** (`apps/web`) is a single App Router tree: `/` (search), `/products/[id]` (detail, nutrition or subscribe prompt), `/subscription/success` and `/subscription/cancel` (Stripe redirect targets). `lib/locale-context.tsx` provides the active locale and translations everywhere via React context; `lib/api.ts` is the one place that calls the backend.
+**Frontend** (`apps/web`) is a single App Router tree: `/` (search), `/products/[id]` (detail, nutrition or subscribe prompt), `/subscription/success` and `/subscription/cancel` (Stripe redirect targets). Two React contexts sit in the root layout — `lib/locale-context.tsx` for the active locale and translations, `lib/subscription-context.tsx` for subscription status, fetched once and shared by the header and the homepage rather than requested per component. `lib/api.ts` is the one place that calls the backend, and `lib/use-checkout.ts` the one place that starts a Checkout Session.
+
+**The active search lives in the URL** (`/?q=nutella`) rather than in component state, so it survives a reload, restores on back/forward, and can be shared. Submitting the form rewrites the URL and a single effect reacts to it, which avoids keeping state and URL in sync. Product links carry the query so their back link returns to the same results.
 
 **`packages/shared`** holds the Zod schemas, TypeScript types, and constants both apps import — no server secrets — so the same validation rules and response shapes are enforced on both ends of every request.
 
@@ -44,7 +46,7 @@ A responsive search application for packaged foods, backed by [Open Food Facts](
 apps/web         Next.js interface: search, product/nutrition pages, locale dictionaries, Playwright e2e
 apps/api         NestJS modules: products, Open Food Facts adapter, recent searches, users, Stripe/billing
 packages/shared  Zod schemas, types, and constants shared by both apps, no server secrets
-prisma           Schema, migrations, and demo-user seed
+prisma           Schema, migrations, and the seed (demo user plus six recent searches)
 scripts          One-off local tooling (e.g. the MySQL dev-privilege grant)
 docs             Assignment and build plan
 ```
@@ -78,9 +80,38 @@ Other useful scripts, runnable from the repo root:
 
 The app has no registration: every request acts as a single seeded demo user. If that row is missing, the API answers `500` with *"Demo user is missing; run the database seed"* rather than failing obscurely — the fix is always `npm run prisma:seed`. Note that `prisma migrate reset` drops the data but does **not** reliably re-run the seed, so run it yourself afterwards.
 
+## What is free and what is paywalled
+
+The assignment says everyone may view *"basic information such as the product name, brand, and image"*, while *"detailed nutritional values"* require an active subscription. "Such as" reads as examples rather than an exhaustive list, so the line is drawn at nutritional values:
+
+| | Fields |
+| --- | --- |
+| **Free** | `name`, `brand`, `imageUrl`, `id` (barcode), `genericName`, `quantity`, `servingSize`, `ingredientsText`, `allergens`, `categories`, `labels`, `countries`, `novaGroup`, `ecoScore` |
+| **Subscriber only** | `energyKcal`, `fat`, `saturatedFat`, `carbohydrates`, `sugars`, `fiber`, `proteins`, `salt`, `basis`, `nutriScore` |
+
+Two decisions worth surfacing:
+
+- **Nutri-Score is paywalled**, even though it is a single letter rather than a number. It is computed *from* the nutriments, so publishing it free would leak a summary of exactly what the subscription sells. It travels on `NutritionInfo` and renders inside the gated panel.
+- **Ingredients and allergens are free.** They are label information printed on the package, not nutritional values, and allergens in particular are safety information that it would be hard to justify charging for.
+
+Enforcement is server-side only: `SubscriptionGuard` on `GET /products/:id/nutrition` returns `403` unless the demo user's subscription status is exactly `active`, so a canceled subscription loses access immediately. Hiding the panel in React is cosmetic — the data never leaves the server without entitlement, and the response carries `Cache-Control: private, no-store`. Both the free payload's exact field set and the 403/200 behaviour are pinned by tests, so the boundary cannot drift unnoticed.
+
+## Subscribing
+
+Checkout can be started from three places, all sharing one `useCheckout` hook: the prompt on a product page (where the paywall is actually met), a banner on the homepage, and the plan badge in the header. The latter two exist because a visitor who never opens a product would otherwise have no way to find the offer at all. All three disappear for a subscriber.
+
+**Checkout returns you where you started.** The client sends the current path — query string included — and the API appends it to Stripe's success and cancel URLs, so paying from `/products/123?q=snack` lands back on that product with nutrition unlocked, and abandoning checkout returns there too. That path is validated as a same-origin relative path in three places (the Zod body schema, the service that builds the URL, and the page that renders the link): it reaches a redirect after a round trip through a third party, so a protocol-relative value like `//other-site.test` or anything carrying a scheme is rejected at each step rather than trusted from the one before.
+
 ## Internationalization
 
-The selector in the top-right of the search page switches between English, Dutch, German, and French, persisting the choice to `localStorage`. Changing it re-issues the active search and any open product page against the API with the new `locale`, so product names — not just interface labels — update; a product with no name in the selected language falls back through the generic and English fields rather than showing nothing, and never displays a fabricated translation.
+A labelled selector in the header switches between English, Dutch, German, and French, persisting the choice to `localStorage`. It is in the header rather than on the search page so the language can also be changed while reading a product. Options are endonyms — English, Nederlands, Deutsch, Français — so someone who has landed on a language they cannot read can still find their own.
+
+Changing it re-issues the active search and any open product page against the API with the new `locale`, so **product data updates, not just interface labels**. Names, generic names, and ingredient lists each resolve through the requested locale first, then the submitter's own text, then English, and finally `null` — at which point the UI shows its own translated "unavailable" label rather than a fabricated translation. Numbers and dates are formatted with `Intl` against the active locale.
+
+Two honest limits:
+
+- **Tag lists are not translated.** Allergens, categories, labels, and countries come from Open Food Facts' canonical English taxonomy (`en:palm-oil-free` → "Palm oil free"); upstream offers no translation for them, and inventing one would be worse than showing the canonical value. The labels around them are translated.
+- **English is a fallback rung, never the first choice.** When a product has no text in the selected language, the submitter's original is preferred over English, because `product_name_en` is sometimes wrong — a real Open Food Facts record returns `"blueberry jam"` as the English name for Nutella, and that case is pinned in the tests. The consequence is that a French reader may see a Hungarian description on a Hungarian product even when an English one exists.
 
 ## Stripe test-mode setup
 
@@ -152,22 +183,33 @@ The API logs the event and records it in `ProcessedStripeEvent`. A `400` on `/bi
 
 | Command | What it covers | Needs |
 | --- | --- | --- |
-| `npm run test --workspace apps/api` | Unit tests: Open Food Facts response mapping and locale fallback, Stripe webhook signature verification (a genuinely valid HMAC via Stripe's own `generateTestHeaderString`, no network call), webhook idempotency/staleness/entitlement logic | Nothing — no database, no network |
-| `npm run test:e2e --workspace apps/api` | Real HTTP against the full app: query/locale validation, recent-search persistence (read back through the real endpoint), and nutrition access control (403 with no/canceled subscription, 200 with `Cache-Control: private, no-store` once active) | Local MySQL running (`npm run db:up`) and `apps/api/.env` configured |
+| `npm run test --workspace apps/api` | 58 unit tests: Open Food Facts response mapping, locale fallback and upstream-noise filtering; Stripe webhook signature verification (a genuinely valid HMAC via Stripe's own `generateTestHeaderString`, no network call); webhook idempotency/staleness/entitlement logic; checkout return-path validation, including rejection of protocol-relative and scheme-carrying values; recent-search de-duplication | Nothing — no database, no network |
+| `npm run test:e2e --workspace apps/api` | 11 tests over real HTTP against the full app: query/locale validation, recent-search persistence (read back through the real endpoint), the `GET /me` payload, and nutrition access control (403 with no or canceled subscription, 200 with `Cache-Control: private, no-store` once active, and the public product payload asserted to carry no nutrition at all) | Local MySQL running (`npm run db:up`) and `apps/api/.env` configured |
 | `npm run test:e2e --workspace apps/web` | A real headless Chromium (Playwright): submitting a search renders results, switching locale re-fetches and re-renders with the new language, a blank query is rejected client-side. Network is mocked at the API boundary the page calls, so it doesn't depend on live Open Food Facts data | Nothing — builds and serves the app itself; no backend or database needed |
 
-What isn't automated, and needs a real Stripe test-mode account (see above) plus a browser to check by hand: completing an actual Checkout session, confirming a live webhook delivery unlocks nutrition, and general UX review (responsive layout, keyboard navigation, error-state readability).
+The full payment path has since been exercised by hand against a real Stripe test-mode account — a live Checkout Session, a card payment, `customer.subscription.created` delivered by `stripe listen`, and nutrition unlocking as a result. That run is not automated: it needs a Stripe account and a browser, so it stays a manual check, as does general UX review (responsive layout, keyboard navigation, error-state readability).
+
+That same run surfaced a real defect. Two CLI listeners were briefly forwarding to the same endpoint, so each event arrived twice at once; the idempotency check reads `ProcessedStripeEvent` and then inserts into it, which is not atomic, and the delivery that lost the race returned `500` — telling Stripe to redeliver an event that had in fact been handled. Losing that race now returns normally, which is covered by tests. It is not only an artifact of the duplicate listener: Stripe's own retries can overlap, and multiple API instances behind a load balancer would race the same way.
 
 ## Security
 
-Stripe secret keys, webhook secrets, and database credentials stay on the backend and are never committed. Only `.env.example` templates are tracked. Nutrition access is authorized on the server on every request via a Nest guard, never assumed from a prior page visit or a successful checkout redirect; nutrition responses are marked `Cache-Control: private, no-store` so a shared cache can never serve one client's entitled response to another.
+Stripe secret keys, webhook secrets, and database credentials stay on the backend and are never committed. Only `.env.example` templates are tracked. The Stripe **publishable** key is not used at all — the browser never talks to Stripe directly; it asks the API for a Checkout Session and follows the URL Stripe returns.
+
+Nutrition access is authorized on the server on every request via a Nest guard, never assumed from a prior page visit or a successful checkout redirect — a redirect can be forged, a signed webhook cannot. Nutrition responses are marked `Cache-Control: private, no-store` so a shared cache can never serve one client's entitled response to another.
+
+Two smaller things worth naming:
+
+- **The post-checkout return path is validated as an open-redirect surface.** It is client-chosen, embedded in a URL Stripe redirects to, and navigated to on return, so it is treated as untrusted at every step (see [Subscribing](#subscribing)).
+- **Errors do not echo credentials.** When Stripe rejects the configured key, the API logs the detail and returns its own `billing_not_configured` message rather than forwarding Stripe's, which contains a masked form of the key.
 
 ## Limitations
 
 - **Webhook delivery depends on the Stripe CLI running locally.** Stripe cannot reach `localhost`, so without `stripe listen` a completed payment never reaches the app and nutrition stays locked, even though the money moved. That is a property of local development rather than a defect — a deployed instance registers a public webhook endpoint instead — but it is the first thing to check when a real payment appears to have had no effect. See [Installing the Stripe CLI](#installing-the-stripe-cli).
 - **No subscription management.** Cancelling or changing a plan happens in the Stripe dashboard; the app reflects the change when the resulting webhook arrives, but offers no billing portal of its own.
 - One shared demo user, with no registration or full authentication flow.
-- A single monthly subscription price, with no tiers or billing portal.
+- A single monthly subscription price, with no tiers.
+- **Tag lists are shown in Open Food Facts' canonical English**, since upstream has no translations for them (see [Internationalization](#internationalization)).
+- Recent searches are stored but not otherwise used — there is no history page, and the list is capped at the ten most recent.
 - Open Food Facts remains the only product source; there is no catalog import or machine translation of product data.
 - Deployment is out of scope.
 
