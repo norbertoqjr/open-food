@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { getSubscriptionStatus } from '@/lib/api';
 import { useLocale } from '@/lib/locale-context';
 
@@ -59,7 +59,9 @@ export default function SubscriptionSuccessPage() {
         {confirmed === true && t.subscriptionSuccessConfirmed}
         {confirmed === false && t.subscriptionSuccessPending}
       </p>
-      <Button render={<Link href="/" />}>{t.backToSearch}</Button>
+      <Link href="/" className={buttonVariants()}>
+        {t.backToSearch}
+      </Link>
     </main>
   );
 }
