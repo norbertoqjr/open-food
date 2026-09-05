@@ -44,4 +44,12 @@ export const fr = {
   subscriptionCancelTitle: 'Paiement annulé',
   subscriptionCancelMessage: "Aucune modification n'a été apportée à votre abonnement.",
   backToSearch: 'Retour à la recherche',
+  selectLanguageLabel: 'Choisir la langue',
+  signedInAs: 'Connecté en tant que',
+  demoUserName: 'Utilisateur démo',
+  planFree: 'Gratuit',
+  planSubscribed: 'Abonné',
+  memberSince: (date: string) => `Membre depuis ${date}`,
+  planEndsOn: (date: string) => `Se termine le ${date}`,
+  planRenewsOn: (date: string) => `Se renouvelle le ${date}`,
 } satisfies typeof en;

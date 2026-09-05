@@ -42,4 +42,12 @@ export const de = {
   subscriptionCancelTitle: 'Kasse abgebrochen',
   subscriptionCancelMessage: 'An Ihrem Abonnement wurden keine Änderungen vorgenommen.',
   backToSearch: 'Zurück zur Suche',
+  selectLanguageLabel: 'Sprache wählen',
+  signedInAs: 'Angemeldet als',
+  demoUserName: 'Demo-Benutzer',
+  planFree: 'Kostenlos',
+  planSubscribed: 'Abonniert',
+  memberSince: (date: string) => `Mitglied seit ${date}`,
+  planEndsOn: (date: string) => `Endet am ${date}`,
+  planRenewsOn: (date: string) => `Verlängert sich am ${date}`,
 } satisfies typeof en;

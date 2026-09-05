@@ -43,4 +43,12 @@ export const en = {
   subscriptionCancelTitle: 'Checkout canceled',
   subscriptionCancelMessage: 'No changes were made to your subscription.',
   backToSearch: 'Back to search',
+  selectLanguageLabel: 'Select language',
+  signedInAs: 'Signed in as',
+  demoUserName: 'Demo user',
+  planFree: 'Free',
+  planSubscribed: 'Subscribed',
+  memberSince: (date: string) => `Member since ${date}`,
+  planEndsOn: (date: string) => `Ends ${date}`,
+  planRenewsOn: (date: string) => `Renews ${date}`,
 };

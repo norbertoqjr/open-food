@@ -42,4 +42,12 @@ export const nl = {
   subscriptionCancelTitle: 'Afrekenen geannuleerd',
   subscriptionCancelMessage: 'Er zijn geen wijzigingen aangebracht in je abonnement.',
   backToSearch: 'Terug naar zoeken',
+  selectLanguageLabel: 'Taal kiezen',
+  signedInAs: 'Aangemeld als',
+  demoUserName: 'Demogebruiker',
+  planFree: 'Gratis',
+  planSubscribed: 'Geabonneerd',
+  memberSince: (date: string) => `Lid sinds ${date}`,
+  planEndsOn: (date: string) => `Eindigt ${date}`,
+  planRenewsOn: (date: string) => `Verlengt ${date}`,
 } satisfies typeof en;
