@@ -8,6 +8,7 @@ export const fr = {
   searchButton: 'Rechercher',
   searchingButton: 'Recherche…',
   searchRequiredError: 'Saisissez un terme de recherche.',
+  searchIdleHint: 'Recherchez par nom de produit ou marque pour voir les résultats ici.',
   searchFailedError: 'Échec de la recherche. Réessayez.',
   recentSearchesLabel: 'Recherches récentes',
   unnamedProduct: 'Produit sans nom',

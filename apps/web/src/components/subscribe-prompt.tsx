@@ -26,16 +26,21 @@ export function SubscribePrompt() {
   return (
     <div
       className={[
-        'flex flex-col items-center gap-3 rounded-lg border',
-        'border-border p-4 text-center',
+        'flex flex-col items-start gap-3 rounded-xl border border-border',
+        'bg-muted/40 p-5',
       ].join(' ')}
     >
-      <p className="text-sm text-muted-foreground">{t.subscribePrompt}</p>
+      <div className="flex flex-col gap-1">
+        <h3 className="text-sm font-semibold tracking-tight">{t.nutritionTitle}</h3>
+        <p className="max-w-[46ch] text-sm text-muted-foreground">{t.subscribePrompt}</p>
+      </div>
       <Button type="button" onClick={handleSubscribe} disabled={state === 'redirecting'}>
         {state === 'redirecting' ? t.redirectingToCheckout : t.subscribeButton}
       </Button>
       {state === 'error' ? (
-        <p role="alert" className="text-sm text-destructive">{t.checkoutFailedError}</p>
+        <p role="alert" className="text-sm font-medium text-destructive">
+          {t.checkoutFailedError}
+        </p>
       ) : null}
     </div>
   );

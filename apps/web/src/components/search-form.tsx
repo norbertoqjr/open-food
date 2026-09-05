@@ -37,18 +37,22 @@ export function SearchForm({ query, onSearch, isSearching }: SearchFormProps) {
   return (
     <form
       onSubmit={handleSubmit((values) => onSearch(values.query))}
-      className="flex w-full max-w-md flex-col gap-2"
+      className="flex w-full max-w-xl flex-col gap-2"
       noValidate
     >
-      <Label htmlFor="search-query">{t.searchLabel}</Label>
+      <Label htmlFor="search-query" className="text-xs font-medium text-muted-foreground">
+        {t.searchLabel}
+      </Label>
       <div className="flex gap-2">
         <Input
           id="search-query"
           placeholder={t.searchPlaceholder}
+          autoComplete="off"
           aria-invalid={Boolean(errors.query)}
+          className="h-10 flex-1 rounded-lg"
           {...register('query')}
         />
-        <Button type="submit" disabled={isSearching}>
+        <Button type="submit" size="lg" disabled={isSearching} className="h-10 px-5">
           {isSearching ? t.searchingButton : t.searchButton}
         </Button>
       </div>

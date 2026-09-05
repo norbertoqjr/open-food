@@ -9,6 +9,7 @@ export const en = {
   searchButton: 'Search',
   searchingButton: 'Searching…',
   searchRequiredError: 'Enter a search term.',
+  searchIdleHint: 'Search by product name or brand to see results here.',
   searchFailedError: 'Search failed. Try again.',
   recentSearchesLabel: 'Recent searches',
   unnamedProduct: 'Unnamed product',

@@ -4,7 +4,6 @@ import type { ProductSummary, RecentSearchItem } from '@open-food/shared';
 import {
   useCallback, useEffect, useRef, useState,
 } from 'react';
-import { LocaleSelector } from '@/components/locale-selector';
 import { ProductCard } from '@/components/product-card';
 import { RecentSearchesList } from '@/components/recent-searches-list';
 import { SearchForm } from '@/components/search-form';
@@ -13,7 +12,7 @@ import { formatNumber } from '@/lib/format-number';
 import { ApiError, getRecentSearches, searchProducts } from '@/lib/api';
 import { useLocale } from '@/lib/locale-context';
 
-type SearchState = | { status: 'idle' }
+type SearchState = { status: 'idle' }
   | { status: 'loading' }
   | { status: 'error'; message: string }
   | { status: 'success'; items: ProductSummary[]; total: number };
@@ -58,53 +57,74 @@ export default function Home() {
   }, [locale]);
 
   return (
-    <main className="flex flex-1 flex-col items-center gap-8 px-6 py-16">
-      <div className="flex w-full max-w-4xl justify-end">
-        <LocaleSelector />
-      </div>
-
-      <div className="flex flex-col items-center gap-1 text-center">
-        <h1 className="text-2xl font-semibold text-black dark:text-zinc-50">{t.appTitle}</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">{t.appTagline}</p>
-      </div>
-
-      <SearchForm query={query} onSearch={runSearch} isSearching={state.status === 'loading'} />
-
-      <RecentSearchesList items={recentSearches} onSelect={runSearch} />
-
-      {state.status === 'loading' ? (
-        <div
-          className={[
-            'grid w-full max-w-4xl grid-cols-2 gap-4',
-            'sm:grid-cols-3 md:grid-cols-4',
-          ].join(' ')}
-        >
-          {Array.from({ length: 8 }, (_, index) => (
-            <Skeleton key={index} className="aspect-square rounded-lg" />
-          ))}
-        </div>
-      ) : null}
-
-      {state.status === 'error' ? (
-        <p role="alert" className="text-sm text-destructive">{state.message}</p>
-      ) : null}
-
-      {state.status === 'success' && state.items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t.noResultsFor(query)}</p>
-      ) : null}
-
-      {state.status === 'success' && state.items.length > 0 ? (
-        <div className="flex w-full max-w-4xl flex-col gap-4">
-          <p className="text-sm text-muted-foreground">
-            {t.resultsCount(formatNumber(state.total, locale))}
+    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
+      <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-5">
+          <p
+            className={[
+              'max-w-[55ch] text-pretty text-2xl font-semibold',
+              'leading-snug tracking-tight',
+            ].join(' ')}
+          >
+            {t.appTagline}
           </p>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-            {state.items.map((item) => (
-              <ProductCard key={item.id} {...item} />
-            ))}
-          </div>
+          <SearchForm query={query} onSearch={runSearch} isSearching={state.status === 'loading'} />
+          <RecentSearchesList items={recentSearches} onSelect={runSearch} />
         </div>
-      ) : null}
+
+        <div aria-live="polite" aria-busy={state.status === 'loading'}>
+          {state.status === 'idle' ? (
+            <p className="border-t border-border pt-8 text-sm text-muted-foreground">
+              {t.searchIdleHint}
+            </p>
+          ) : null}
+
+          {state.status === 'loading' ? (
+            <div
+              className={[
+                'grid grid-cols-2 gap-4 border-t border-border pt-8',
+                'sm:grid-cols-3 md:grid-cols-4',
+              ].join(' ')}
+            >
+              {Array.from({ length: 8 }, (_, index) => (
+                <div key={index} className="flex flex-col gap-3">
+                  <Skeleton className="aspect-square rounded-xl" />
+                  <Skeleton className="h-3.5 w-4/5 rounded-sm" />
+                  <Skeleton className="h-3 w-2/5 rounded-sm" />
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          {state.status === 'error' ? (
+            <p
+              role="alert"
+              className="border-t border-border pt-8 text-sm font-medium text-destructive"
+            >
+              {state.message}
+            </p>
+          ) : null}
+
+          {state.status === 'success' && state.items.length === 0 ? (
+            <p className="border-t border-border pt-8 text-sm text-muted-foreground">
+              {t.noResultsFor(query)}
+            </p>
+          ) : null}
+
+          {state.status === 'success' && state.items.length > 0 ? (
+            <div className="flex flex-col gap-4 border-t border-border pt-6">
+              <p className="tabular-figures text-xs text-muted-foreground">
+                {t.resultsCount(formatNumber(state.total, locale))}
+              </p>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                {state.items.map((item) => (
+                  <ProductCard key={item.id} {...item} />
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </div>
     </main>
   );
 }

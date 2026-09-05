@@ -8,9 +8,9 @@ export default function SubscriptionCancelPage() {
   const { t } = useLocale();
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-16 text-center">
-      <h1 className="text-xl font-semibold">{t.subscriptionCancelTitle}</h1>
-      <p className="text-sm text-muted-foreground">{t.subscriptionCancelMessage}</p>
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-start gap-4 px-6 py-16">
+      <h2 className="text-2xl font-semibold tracking-tight">{t.subscriptionCancelTitle}</h2>
+      <p className="max-w-[55ch] text-sm text-muted-foreground">{t.subscriptionCancelMessage}</p>
       <Button render={<Link href="/" />}>{t.backToSearch}</Button>
     </main>
   );

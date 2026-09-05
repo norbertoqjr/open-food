@@ -29,18 +29,23 @@ export function NutritionPanel({ nutrition }: NutritionPanelProps) {
   ];
 
   return (
-    <div className="flex w-full flex-col gap-2">
-      <div className="flex items-baseline justify-between">
-        <h2 className="text-sm font-semibold">{t.nutritionTitle}</h2>
+    <div className="flex w-full flex-col gap-3 border-t border-border pt-5">
+      <div className="flex items-baseline justify-between gap-4">
+        <h3 className="text-sm font-semibold tracking-tight">{t.nutritionTitle}</h3>
         {nutrition.basis ? (
           <span className="text-xs text-muted-foreground">{t.nutritionBasis(nutrition.basis)}</span>
         ) : null}
       </div>
       <dl className="flex flex-col divide-y divide-border text-sm">
         {rows.map((row) => (
-          <div key={row.label} className="flex justify-between py-1.5">
+          <div key={row.label} className="flex items-baseline justify-between gap-6 py-2">
             <dt className="text-muted-foreground">{row.label}</dt>
-            <dd>
+            <dd
+              className={[
+                'tabular-figures shrink-0 text-right',
+                row.value === null ? 'text-muted-foreground' : 'font-medium',
+              ].join(' ')}
+            >
               {row.value === null ? '—' : `${formatNumber(row.value, locale)} ${row.unit}`}
             </dd>
           </div>

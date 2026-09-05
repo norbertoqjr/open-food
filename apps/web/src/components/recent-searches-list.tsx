@@ -15,8 +15,8 @@ export function RecentSearchesList({ items, onSelect }: RecentSearchesListProps)
   }
 
   return (
-    <div className="flex w-full max-w-md flex-col gap-2">
-      <p className="text-sm font-medium text-muted-foreground">{t.recentSearchesLabel}</p>
+    <div className="flex w-full max-w-xl flex-col gap-2">
+      <p className="text-xs font-medium text-muted-foreground">{t.recentSearchesLabel}</p>
       <div className="flex flex-wrap gap-2">
         {items.map((item) => (
           <Button

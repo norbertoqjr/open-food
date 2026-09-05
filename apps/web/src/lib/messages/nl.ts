@@ -8,6 +8,7 @@ export const nl = {
   searchButton: 'Zoeken',
   searchingButton: 'Zoeken…',
   searchRequiredError: 'Voer een zoekterm in.',
+  searchIdleHint: 'Zoek op productnaam of merk om hier resultaten te zien.',
   searchFailedError: 'Zoeken mislukt. Probeer het opnieuw.',
   recentSearchesLabel: 'Recente zoekopdrachten',
   unnamedProduct: 'Naamloos product',

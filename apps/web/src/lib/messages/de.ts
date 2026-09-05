@@ -8,6 +8,7 @@ export const de = {
   searchButton: 'Suchen',
   searchingButton: 'Suche läuft…',
   searchRequiredError: 'Geben Sie einen Suchbegriff ein.',
+  searchIdleHint: 'Suchen Sie nach Produktname oder Marke, um hier Ergebnisse zu sehen.',
   searchFailedError: 'Suche fehlgeschlagen. Bitte erneut versuchen.',
   recentSearchesLabel: 'Letzte Suchanfragen',
   unnamedProduct: 'Unbenanntes Produkt',
