@@ -20,7 +20,8 @@
     "test": "npm run test --workspaces --if-present",
     "prisma:migrate": "prisma migrate dev --schema prisma/schema.prisma",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
-    "prisma:seed": "prisma db seed --schema prisma/schema.prisma"
+    "prisma:seed": "prisma db seed --schema prisma/schema.prisma",
+    "prisma:reset": "prisma migrate reset --schema prisma/schema.prisma && npm run prisma:seed"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

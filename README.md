@@ -76,9 +76,12 @@ Other useful scripts, runnable from the repo root:
 | --- | --- |
 | `npm run lint` / `npm run typecheck` / `npm run test` / `npm run build` | Run across every workspace |
 | `npm run prisma:migrate` | Apply schema changes to the local database |
-| `npm run prisma:seed` | Re-run the demo-user seed (idempotent) |
+| `npm run prisma:seed` | Re-run the seed (idempotent — safe to run repeatedly) |
+| `npm run prisma:reset` | **Destroys all local data**, replays every migration, then seeds. Prompts before dropping anything |
 
-The app has no registration: every request acts as a single seeded demo user. If that row is missing, the API answers `500` with *"Demo user is missing; run the database seed"* rather than failing obscurely — the fix is always `npm run prisma:seed`. Note that `prisma migrate reset` drops the data but does **not** reliably re-run the seed, so run it yourself afterwards.
+The app has no registration: every request acts as a single seeded demo user. If that row is missing, every endpoint answers `500` with *"Demo user is missing; run the database seed"* rather than failing obscurely — the fix is always `npm run prisma:seed`.
+
+That error is easy to hit after a reset, because **Prisma 7's `migrate reset` does not run the seed** (seeding was decoupled from it — there is no longer a `--skip-seed` flag, and the command's help makes no mention of seeding). Running `prisma migrate reset` directly therefore leaves an empty database and a `500`ing API. `npm run prisma:reset` above exists to avoid that trap: it chains the seed itself.
 
 ## What is free and what is paywalled
 
