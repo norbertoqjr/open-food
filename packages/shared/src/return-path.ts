@@ -1,9 +1,9 @@
 import * as z from 'zod';
 
 // A return path is chosen by the client, embedded in the Stripe redirect URL,
-// and later navigated to. Only a same-origin relative path is safe:
-// "//evil.com" and "/\evil.com" are protocol-relative URLs that browsers
-// resolve to another host, and anything carrying a scheme leaves the site.
+// and later navigated to. Only a same-origin relative path is safe: a value
+// beginning "//" or "/\" is a protocol-relative URL that browsers resolve to
+// another host, and anything carrying a scheme leaves the site outright.
 // Rejecting those is what keeps this from being an open redirect.
 export function isSafeReturnPath(value: string): boolean {
   if (!value.startsWith('/')) return false;

@@ -14,15 +14,15 @@ describe('isSafeReturnPath', () => {
 
   it.each([
     // Protocol-relative: a browser resolves these to another host.
-    ['//evil.com'],
-    ['//evil.com/products/1'],
-    ['/\\evil.com'],
+    ['//other-site.test'],
+    ['//other-site.test/products/1'],
+    ['/\\other-site.test'],
     // Absolute URLs leave the site entirely.
-    ['https://evil.com'],
+    ['https://other-site.test'],
     // eslint-disable-next-line no-script-url -- the point is that we reject it
     ['javascript:alert(1)'],
     // A scheme hidden behind the leading slash.
-    ['/https://evil.com'],
+    ['/https://other-site.test'],
     // Not a path at all.
     ['products/123'],
     [''],
@@ -37,8 +37,9 @@ describe('checkoutSessionBodySchema', () => {
   });
 
   it('rejects an off-site returnTo', () => {
-    expect(checkoutSessionBodySchema.safeParse({ returnTo: '//evil.com' }).success).toBe(false);
-    expect(checkoutSessionBodySchema.safeParse({ returnTo: 'https://evil.com' }).success)
+    expect(checkoutSessionBodySchema.safeParse({ returnTo: '//other-site.test' }).success)
+      .toBe(false);
+    expect(checkoutSessionBodySchema.safeParse({ returnTo: 'https://other-site.test' }).success)
       .toBe(false);
   });
 });
@@ -91,10 +92,10 @@ describe('BillingService.createCheckoutSession redirect URLs', () => {
   it('never redirects off-site, even if validation upstream were bypassed', async () => {
     const { service, create } = buildService();
 
-    await service.createCheckoutSession('//evil.com');
+    await service.createCheckoutSession('//other-site.test');
 
     const args = create.mock.calls[0][0] as { success_url: string };
     expect(args.success_url).toBe('http://localhost:3000/subscription/success');
-    expect(args.success_url).not.toContain('evil.com');
+    expect(args.success_url).not.toContain('other-site.test');
   });
 });
