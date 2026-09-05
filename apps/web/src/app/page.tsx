@@ -1,8 +1,9 @@
 'use client';
 
 import type { ProductSummary, RecentSearchItem } from '@open-food/shared';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  useCallback, useEffect, useRef, useState,
+  Suspense, useCallback, useEffect, useState,
 } from 'react';
 import { ProductCard } from '@/components/product-card';
 import { RecentSearchesList } from '@/components/recent-searches-list';
@@ -17,27 +18,26 @@ type SearchState = { status: 'idle' }
   | { status: 'error'; message: string }
   | { status: 'success'; items: ProductSummary[]; total: number };
 
-export default function Home() {
+// The active search lives in the URL (/?q=…) rather than in component state,
+// so it survives a reload, restores on back/forward, and can be linked to.
+// The effect below is the only thing that runs a search: submitting the form
+// just rewrites the URL, which makes that URL the single source of truth
+// instead of something kept in sync with a second copy in state.
+function HomeSearch() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const query = searchParams.get('q')?.trim() ?? '';
+
   const { locale, t } = useLocale();
-  const [query, setQuery] = useState('');
   const [state, setState] = useState<SearchState>({ status: 'idle' });
   const [recentSearches, setRecentSearches] = useState<RecentSearchItem[]>([]);
-  const hasSearchedRef = useRef(false);
 
-  const runSearch = useCallback(async (nextQuery: string) => {
-    hasSearchedRef.current = true;
-    setQuery(nextQuery);
-    setState({ status: 'loading' });
-
-    try {
-      const result = await searchProducts(nextQuery, locale);
-      setState({ status: 'success', items: result.items, total: result.total });
-      setRecentSearches(await getRecentSearches());
-    } catch (error) {
-      const message = error instanceof ApiError ? error.message : t.searchFailedError;
-      setState({ status: 'error', message });
-    }
-  }, [locale, t.searchFailedError]);
+  const handleSearch = useCallback((nextQuery: string) => {
+    const trimmed = nextQuery.trim();
+    // replace, not push: a search is a refinement of the current view, so it
+    // should not bury the previous query in the back stack.
+    router.replace(trimmed ? `/?q=${encodeURIComponent(trimmed)}` : '/', { scroll: false });
+  }, [router]);
 
   useEffect(() => {
     getRecentSearches()
@@ -45,16 +45,34 @@ export default function Home() {
       .catch(() => setRecentSearches([]));
   }, []);
 
-  // Re-run the active search when the language changes, so product names
-  // switch to the new locale rather than staying stuck in the old one.
+  // Re-runs on a locale change too, so product names switch to the new
+  // language rather than staying stuck in the old one.
   useEffect(() => {
-    if (hasSearchedRef.current && query) {
-      runSearch(query);
+    if (!query) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setState({ status: 'idle' });
+      return undefined;
     }
-    // Only a locale change should retrigger this; runSearch and query are
-    // intentionally excluded since they change on every search too.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locale]);
+
+    let cancelled = false;
+    setState({ status: 'loading' });
+
+    searchProducts(query, locale)
+      .then(async (result) => {
+        if (cancelled) return;
+        setState({ status: 'success', items: result.items, total: result.total });
+        setRecentSearches(await getRecentSearches());
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        const message = error instanceof ApiError ? error.message : t.searchFailedError;
+        setState({ status: 'error', message });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [query, locale, t.searchFailedError]);
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
@@ -68,8 +86,12 @@ export default function Home() {
           >
             {t.appTagline}
           </p>
-          <SearchForm query={query} onSearch={runSearch} isSearching={state.status === 'loading'} />
-          <RecentSearchesList items={recentSearches} onSelect={runSearch} />
+          <SearchForm
+            query={query}
+            onSearch={handleSearch}
+            isSearching={state.status === 'loading'}
+          />
+          <RecentSearchesList items={recentSearches} onSelect={handleSearch} />
         </div>
 
         <div aria-live="polite" aria-busy={state.status === 'loading'}>
@@ -118,7 +140,7 @@ export default function Home() {
               </p>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
                 {state.items.map((item) => (
-                  <ProductCard key={item.id} {...item} />
+                  <ProductCard key={item.id} {...item} searchQuery={query} />
                 ))}
               </div>
             </div>
@@ -126,5 +148,15 @@ export default function Home() {
         </div>
       </div>
     </main>
+  );
+}
+
+// useSearchParams needs a Suspense boundary above it; without one the whole
+// route opts out of static rendering.
+export default function Home() {
+  return (
+    <Suspense fallback={<main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10" />}>
+      <HomeSearch />
+    </Suspense>
   );
 }

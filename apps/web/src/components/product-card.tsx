@@ -5,14 +5,24 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useLocale } from '@/lib/locale-context';
 
+interface ProductCardProps extends ProductSummary {
+  // Carried into the product URL so its back link can return to this exact
+  // search rather than dumping the user on an empty home page. Empty string
+  // when the card is not shown as part of a search result.
+  searchQuery: string;
+}
+
 export function ProductCard({
-  id, name, brand, imageUrl,
-}: ProductSummary) {
+  id, name, brand, imageUrl, searchQuery,
+}: ProductCardProps) {
   const { t } = useLocale();
+  const href = `/products/${encodeURIComponent(id)}${
+    searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : ''
+  }`;
 
   return (
     <Link
-      href={`/products/${encodeURIComponent(id)}`}
+      href={href}
       className={[
         'group flex flex-col gap-2.5 rounded-xl outline-none',
         'focus-visible:ring-3 focus-visible:ring-ring/50',

@@ -4,7 +4,10 @@ import type { NutritionInfo, ProductSummary } from '@open-food/shared';
 import { ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { use, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import {
+  Suspense, use, useEffect, useState,
+} from 'react';
 import { NutritionPanel } from '@/components/nutrition-panel';
 import { SubscribePrompt } from '@/components/subscribe-prompt';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -23,10 +26,14 @@ type NutritionState = { status: 'checking' }
   | { status: 'unavailable' }
   | { status: 'unlocked'; nutrition: NutritionInfo };
 
+// Returns to the search the user arrived from (carried in ?q=), or to a bare
+// home page when they landed on this product directly.
 function BackToSearchLink({ label }: { label: string }) {
+  const searchQuery = useSearchParams().get('q')?.trim() ?? '';
+
   return (
     <Link
-      href="/"
+      href={searchQuery ? `/?q=${encodeURIComponent(searchQuery)}` : '/'}
       className={[
         'inline-flex items-center gap-1.5 rounded-sm text-sm text-muted-foreground',
         'transition-colors hover:text-foreground focus-visible:outline-none',
@@ -44,7 +51,7 @@ function BackToSearchLink({ label }: { label: string }) {
 // localized product data when the user changes language while viewing it
 // (build plan: "changing language updates ... available localized product
 // content"), which a Server Component page can't react to on its own.
-export default function ProductPage({ params }: PageProps<'/products/[id]'>) {
+function ProductView({ params }: PageProps<'/products/[id]'>) {
   const { id } = use(params);
   const { locale, t } = useLocale();
   const [state, setState] = useState<ProductState>({ status: 'loading' });
@@ -200,5 +207,15 @@ export default function ProductPage({ params }: PageProps<'/products/[id]'>) {
         </div>
       </div>
     </main>
+  );
+}
+
+// useSearchParams (in BackToSearchLink) needs a Suspense boundary above it;
+// without one the whole route opts out of static rendering.
+export default function ProductPage(props: PageProps<'/products/[id]'>) {
+  return (
+    <Suspense fallback={<main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10" />}>
+      <ProductView {...props} />
+    </Suspense>
   );
 }
