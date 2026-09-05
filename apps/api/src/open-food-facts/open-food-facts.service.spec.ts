@@ -1,5 +1,18 @@
 import { ServiceUnavailableException } from '@nestjs/common';
 import { OpenFoodFactsService } from './open-food-facts.service.js';
+import type { TaxonomyService } from './taxonomy.service.js';
+
+// Stands in for the taxonomy endpoint by returning each tag's own fallback,
+// so these tests assert the mapper's behaviour rather than translations.
+// Translation itself is covered in taxonomy.service.spec.ts.
+const passthroughTaxonomy = {
+  translate: (
+    _tagType: string,
+    tags: string[],
+    _locale: string,
+    fallback: (tag: string) => string,
+  ) => Promise.resolve(tags.map(fallback)),
+} as unknown as TaxonomyService;
 
 function jsonResponse(body: unknown, ok = true, status = 200) {
   return {
@@ -14,7 +27,7 @@ describe('OpenFoodFactsService', () => {
   let fetchMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    service = new OpenFoodFactsService();
+    service = new OpenFoodFactsService(passthroughTaxonomy);
     fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
   });
@@ -222,6 +235,75 @@ describe('OpenFoodFactsService', () => {
       const result = await service.getProduct('123', 'fr');
 
       expect(result?.name).toBe('Nutella FR');
+    });
+
+    it('prefers a tagged English name over the untagged field', async () => {
+      // The untagged product_name carries no language claim; a tagged English
+      // one at least declares what it is.
+      fetchMock.mockResolvedValueOnce(jsonResponse({
+        status: 1,
+        product: { code: '123', product_name: 'Haferflocken', product_name_en: 'Oat flakes' },
+      }));
+
+      expect((await service.getProduct('123', 'fr'))?.name).toBe('Oat flakes');
+    });
+
+    it('still names a product that only has the untagged field', async () => {
+      // A name is an identifier: showing the wrong language beats showing
+      // nothing, so unlike prose it keeps the untagged last resort.
+      fetchMock.mockResolvedValueOnce(jsonResponse({
+        status: 1,
+        product: { code: '123', product_name: 'Haferflocken' },
+      }));
+
+      expect((await service.getProduct('123', 'en'))?.name).toBe('Haferflocken');
+    });
+
+    it('omits ingredients when none are tagged in the locale or English', async () => {
+      // Real shape: the untagged field is a multilingual dump off the packaging,
+      // and the only "en" keys are OCR artifacts, not a curated translation.
+      fetchMock.mockResolvedValueOnce(jsonResponse({
+        status: 1,
+        product: {
+          code: '123',
+          ingredients_text: 'Hafervollkornflocken Kleinblatt\r\nPalnozarnesti oveseni yadki.',
+          ingredients_text_de: 'Hafervollkornflocken Kleinblatt',
+          ingredients_text_en_ocr_1746020332: '100 % wholemeal oat flakes',
+        },
+      }));
+
+      // Not the German/Bulgarian blob, and not the OCR field either.
+      expect((await service.getProduct('123', 'en'))?.ingredientsText).toBeNull();
+    });
+
+    it('omits a generic name when none is tagged in the locale or English', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({
+        status: 1,
+        product: { code: '123', generic_name: 'Haferflocken Extra zart' },
+      }));
+
+      expect((await service.getProduct('123', 'en'))?.genericName).toBeNull();
+    });
+
+    it('never publishes the Nutri-Score grade through the free label list', async () => {
+      // Upstream files the grade as a label too, sometimes two contradictory
+      // ones at once. Publishing it here would give away what the
+      // subscription gates.
+      fetchMock.mockResolvedValueOnce(jsonResponse({
+        status: 1,
+        product: {
+          code: '123',
+          labels_tags: [
+            'en:nutriscore', 'en:nutriscore-grade-a', 'en:nutriscore-grade-c',
+            'en:green-dot', 'en:source-of-fibre',
+          ],
+        },
+      }));
+
+      const labels = (await service.getProduct('123', 'en'))?.labels ?? [];
+
+      expect(labels).toEqual(['Green dot', 'Source of fibre']);
+      expect(labels.join(' ').toLowerCase()).not.toContain('nutriscore');
     });
 
     it('falls back to the generic name, then English, when the locale is missing', async () => {

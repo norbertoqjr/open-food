@@ -2,6 +2,7 @@ import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import type {
   Locale, NutritionInfo, ProductDetail, ProductSummary,
 } from '@open-food/shared';
+import { TaxonomyService, type TagType } from './taxonomy.service.js';
 
 // Legacy full-text search (world.openfoodfacts.org/api/v2/search) is
 // deprecated and frequently 503s; Search-a-licious is the current search
@@ -107,14 +108,37 @@ function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-// Sentence case by default ("Palm oil free"); title case for country names,
-// which are proper nouns and would otherwise read as "United states".
-function humanizeTags(tags: string[] | undefined, titleCase = false): string[] {
-  return (tags ?? [])
-    .map((tag) => tag.replace(/^[a-z]{2}:/, '').trim())
-    .filter((tag) => !ABSENT_TAG_VALUES.has(tag.toLowerCase()))
-    .map((tag) => tag.replace(/-/g, ' '))
-    .map((tag) => (titleCase ? tag.split(' ').map(capitalize).join(' ') : capitalize(tag)));
+function stripTagPrefix(tag: string): string {
+  return tag.replace(/^[a-z]{2}:/, '').trim();
+}
+
+// Fallback rendering for a tag the taxonomy could not translate: the
+// canonical id made readable ("en:palm-oil-free" -> "Palm oil free").
+function humanizeTag(tag: string, titleCase: boolean): string {
+  const words = stripTagPrefix(tag).replace(/-/g, ' ');
+  return titleCase ? words.split(' ').map(capitalize).join(' ') : capitalize(words);
+}
+
+// Open Food Facts files the Nutri-Score grade as a *label* as well
+// ("en:nutriscore-grade-a"), which would publish for free the very thing the
+// subscription gates -- and inconsistently, since a product can carry two
+// contradictory grades at once. Stripped from the label list; the real grade
+// travels on the subscriber-only NutritionInfo.
+const PAYWALLED_LABEL_PREFIX = 'nutriscore';
+
+// Drops upstream placeholders before anything tries to render or translate
+// them. Keeps the canonical ids intact, since that is what the taxonomy
+// endpoint is keyed by.
+function usableTags(tags: string[] | undefined): string[] {
+  return (tags ?? []).filter(
+    (tag) => !ABSENT_TAG_VALUES.has(stripTagPrefix(tag).toLowerCase()),
+  );
+}
+
+function labelTags(tags: string[] | undefined): string[] {
+  return usableTags(tags).filter(
+    (tag) => !stripTagPrefix(tag).toLowerCase().startsWith(PAYWALLED_LABEL_PREFIX),
+  );
 }
 
 function gradeOrNull(grade: string | undefined): string | null {
@@ -139,8 +163,16 @@ function genericNameFieldsFor(locale: Locale): string[] {
   return [...fields];
 }
 
-// Same precedence as the product name: the requested locale, then whatever
-// the submitter wrote, then English. Never a machine translation.
+// Only language-tagged fields, and English as the single fallback. The
+// untagged `ingredients_text` is NOT reliably the submitter's language --
+// on real records it is a multilingual dump off the packaging (one product
+// carries German and Bulgarian in the same field while declaring lang=en),
+// so falling back to it showed an English reader German ingredients.
+//
+// Returning null instead makes the UI say the list is unavailable, which is
+// honest. That matters more here than elsewhere: an ingredient list is where
+// allergens are declared, and one in a language the reader cannot parse is
+// worse than an explicit absence.
 function resolveIngredientsText(product: UpstreamProduct, locale: Locale): string | null {
   const byLocale: Record<Locale, string | undefined> = {
     en: product.ingredients_text_en,
@@ -151,16 +183,17 @@ function resolveIngredientsText(product: UpstreamProduct, locale: Locale): strin
 
   return (
     byLocale[locale]?.trim()
-    || product.ingredients_text?.trim()
     || product.ingredients_text_en?.trim()
     || null
   );
 }
 
-// Never fabricates a translation: picks among the actual values Open Food
-// Facts already has, preferring the requested locale, then the generic
-// field, then English. A caller with no matching value gets null and shows
-// its own translated "name unavailable" label.
+// Never fabricates a translation: picks among the values Open Food Facts
+// already has. A tagged English name is preferred over the untagged field,
+// which carries no language claim at all; the untagged one is still the last
+// resort, because a name is an identifier and showing the wrong language
+// beats showing "Unnamed product". Prose fields do not take that trade --
+// see resolveIngredientsText.
 function resolveLocalizedName(record: LocalizedNameFields, locale: Locale): string | null {
   const byLocale: Record<Locale, string | undefined> = {
     en: record.product_name_en,
@@ -171,16 +204,16 @@ function resolveLocalizedName(record: LocalizedNameFields, locale: Locale): stri
 
   return (
     byLocale[locale]?.trim()
-    || record.product_name?.trim()
     || record.product_name_en?.trim()
+    || record.product_name?.trim()
     || null
   );
 }
 
-// Localized on the same precedence as the product name and ingredients: the
-// requested locale, then whatever the submitter wrote, then English. Without
-// this a Hungarian product renders its Hungarian description to an English
-// reader even though generic_name_en exists.
+// Prose, so it follows the ingredients rule rather than the name one: tagged
+// fields only, English as the single fallback, otherwise nothing. A
+// description is read for meaning, and one in an unexpected language is
+// noise rather than information.
 //
 // Upstream also often repeats the product name or the brand here ("Nutella"
 // as the generic name of Nutella); that check runs on the resolved value, so
@@ -195,7 +228,6 @@ function resolveGenericName(product: UpstreamProduct, locale: Locale): string | 
 
   const generic = (
     byLocale[locale]?.trim()
-    || product.generic_name?.trim()
     || product.generic_name_en?.trim()
     || ''
   );
@@ -212,6 +244,28 @@ function resolveGenericName(product: UpstreamProduct, locale: Locale): string | 
 @Injectable()
 export class OpenFoodFactsService {
   private readonly logger = new Logger(OpenFoodFactsService.name);
+
+  constructor(private readonly taxonomy: TaxonomyService) {}
+
+  private async localizeTags(
+    tagType: TagType,
+    tags: string[],
+    locale: Locale,
+    titleCase = false,
+  ): Promise<string[]> {
+    const names = await this.taxonomy.translate(
+      tagType,
+      tags,
+      locale,
+      (tag) => humanizeTag(tag, titleCase),
+    );
+
+    // The taxonomy is inconsistent about case -- "Ballaststoffquelle" but
+    // "gluten" -- so the first letter is normalised for display. Only the
+    // first, to leave acronyms and multi-word names ("DLG Goldener Preis")
+    // exactly as the taxonomy spells them.
+    return names.map(capitalize);
+  }
 
   async search(
     query: string,
@@ -258,6 +312,18 @@ export class OpenFoodFactsService {
       return null;
     }
 
+    // Tag lists arrive as canonical English ids whatever the locale, so each
+    // type is translated through the taxonomy endpoint. Fetched together
+    // rather than in sequence, and served from cache after first use.
+    const [allergens, categories, labels, countries] = await Promise.all([
+      this.localizeTags('allergens', usableTags(product.allergens_tags), locale),
+      this.localizeTags('categories', usableTags(product.categories_tags), locale),
+      this.localizeTags('labels', labelTags(product.labels_tags), locale),
+      // Country names are proper nouns, so an untranslated fallback needs
+      // title case or it reads as "United states".
+      this.localizeTags('countries', usableTags(product.countries_tags), locale, true),
+    ]);
+
     return {
       id: product.code,
       name: resolveLocalizedName(product, locale),
@@ -268,10 +334,10 @@ export class OpenFoodFactsService {
       quantity: product.quantity?.trim() || null,
       servingSize: product.serving_size?.trim() || null,
       ingredientsText: resolveIngredientsText(product, locale),
-      allergens: humanizeTags(product.allergens_tags),
-      categories: humanizeTags(product.categories_tags),
-      labels: humanizeTags(product.labels_tags),
-      countries: humanizeTags(product.countries_tags, true),
+      allergens,
+      categories,
+      labels,
+      countries,
       novaGroup: typeof product.nova_group === 'number' ? product.nova_group : null,
       ecoScore: gradeOrNull(product.ecoscore_grade),
     };
