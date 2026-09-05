@@ -21,5 +21,11 @@
     "prisma:migrate": "prisma migrate dev --schema prisma/schema.prisma",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "prisma:seed": "prisma db seed --schema prisma/schema.prisma"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "concurrently": "^10.0.5",
+    "eslint": "^9.39.5",
+    "eslint-config-airbnb-extended": "^3.2.0"
   }
 }
