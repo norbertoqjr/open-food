@@ -54,6 +54,10 @@ model Subscription {
   status               SubscriptionStatus
   currentPeriodEnd     DateTime?
   cancelAtPeriodEnd    Boolean            @default(false)
+  // Stripe does not guarantee webhook delivery order; this is the `created`
+  // timestamp of the last event actually applied, so a delayed, older retry
+  // can never overwrite a newer state.
+  lastEventAt          DateTime
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 }
