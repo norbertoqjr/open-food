@@ -100,8 +100,81 @@ describe('OpenFoodFactsService', () => {
       }));
 
       expect(await service.getProduct('123', 'en')).toEqual({
-        id: '123', name: 'Test', brand: 'Acme', imageUrl: 'https://img',
+        id: '123',
+        name: 'Test',
+        brand: 'Acme',
+        imageUrl: 'https://img',
+        genericName: null,
+        quantity: null,
+        servingSize: null,
+        ingredientsText: null,
+        allergens: [],
+        categories: [],
+        labels: [],
+        countries: [],
+        novaGroup: null,
+        ecoScore: null,
       });
+    });
+
+    it('humanizes taxonomy tags and drops upstream placeholder values', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({
+        status: 1,
+        product: {
+          code: '123',
+          allergens_tags: ['en:milk', 'en:nuts'],
+          labels_tags: ['en:palm-oil-free'],
+          // A product with no category yields this literal, not an empty list.
+          categories_tags: ['en:null'],
+          ecoscore_grade: 'unknown',
+          nova_group: 4,
+        },
+      }));
+
+      const result = await service.getProduct('123', 'en');
+
+      expect(result?.allergens).toEqual(['Milk', 'Nuts']);
+      expect(result?.labels).toEqual(['Palm oil free']);
+      expect(result?.categories).toEqual([]);
+      expect(result?.ecoScore).toBeNull();
+      expect(result?.novaGroup).toBe(4);
+    });
+
+    it('omits a generic name that merely repeats the product name', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({
+        status: 1,
+        product: { code: '123', product_name: 'Nutella', generic_name: 'Nutella' },
+      }));
+
+      expect((await service.getProduct('123', 'en'))?.genericName).toBeNull();
+    });
+
+    it('omits a generic name that merely repeats the brand', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({
+        status: 1,
+        product: {
+          code: '123',
+          product_name: 'Hazelnut Spread + Breadsticks',
+          brands: 'Nutella',
+          generic_name: 'Nutella',
+        },
+      }));
+
+      expect((await service.getProduct('123', 'en'))?.genericName).toBeNull();
+    });
+
+    it('prefers the requested locale for ingredients', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({
+        status: 1,
+        product: {
+          code: '123',
+          ingredients_text: 'sugar, palm oil',
+          ingredients_text_fr: 'sucre, huile de palme',
+        },
+      }));
+
+      expect((await service.getProduct('123', 'fr'))?.ingredientsText)
+        .toBe('sucre, huile de palme');
     });
 
     it('prefers the requested locale over the generic and English names', async () => {
@@ -165,7 +238,17 @@ describe('OpenFoodFactsService', () => {
         fiber: null,
         proteins: 6.3,
         salt: 0.107,
+        nutriScore: null,
       });
+    });
+
+    it('carries the Nutri-Score grade, which is subscriber-only', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({
+        status: 1,
+        product: { code: '123', nutriments: { fat_100g: 30.9 }, nutriscore_grade: 'E' },
+      }));
+
+      expect((await service.getNutrition('123'))?.nutriScore).toBe('e');
     });
 
     it('returns null when the product has no nutriments at all', async () => {

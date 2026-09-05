@@ -2,7 +2,7 @@ import {
   Controller, Get, Header, Param, Query, UseGuards,
 } from '@nestjs/common';
 import {
-  searchQuerySchema, type NutritionInfo, type ProductSummary, type SearchResult,
+  searchQuerySchema, type NutritionInfo, type ProductDetail, type SearchResult,
 } from '@open-food/shared';
 import * as z from 'zod';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
@@ -28,7 +28,7 @@ export class ProductsController {
     @Param('id', new ZodValidationPipe(productIdSchema)) id: string,
     @Query(new ZodValidationPipe(productDetailQuerySchema))
     { locale }: z.infer<typeof productDetailQuerySchema>,
-  ): Promise<ProductSummary> {
+  ): Promise<ProductDetail> {
     return this.products.getProduct(id, locale);
   }
 

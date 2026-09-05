@@ -11,6 +11,9 @@ export interface NutritionInfo {
   fiber: number | null;
   proteins: number | null;
   salt: number | null;
+  // Nutri-Score is computed from the nutriments above, so it is part of the
+  // subscriber-only payload rather than the free product detail.
+  nutriScore: string | null;
 }
 
 export interface SubscriptionStatusResponse {

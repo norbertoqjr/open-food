@@ -8,6 +8,16 @@ interface NutritionPanelProps {
   nutrition: NutritionInfo;
 }
 
+// Open Food Facts' own A–E scale, dark green through red. Written out rather
+// than computed so Tailwind's scanner sees every class literally.
+const NUTRI_SCORE_COLORS: Record<string, string> = {
+  a: 'bg-emerald-600 text-white',
+  b: 'bg-lime-500 text-white',
+  c: 'bg-yellow-400 text-yellow-950',
+  d: 'bg-orange-500 text-white',
+  e: 'bg-red-600 text-white',
+};
+
 interface Row {
   label: string;
   value: number | null;
@@ -36,6 +46,22 @@ export function NutritionPanel({ nutrition }: NutritionPanelProps) {
           <span className="text-xs text-muted-foreground">{t.nutritionBasis(nutrition.basis)}</span>
         ) : null}
       </div>
+
+      {/* Derived from the nutriments below, so it belongs behind the same
+          paywall rather than on the free product detail. */}
+      {nutrition.nutriScore ? (
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">{t.nutriScoreLabel}</span>
+          <span
+            className={[
+              'grid size-6 place-items-center rounded-md text-xs font-bold uppercase',
+              NUTRI_SCORE_COLORS[nutrition.nutriScore] ?? 'bg-muted text-muted-foreground',
+            ].join(' ')}
+          >
+            {nutrition.nutriScore}
+          </span>
+        </div>
+      ) : null}
       <dl className="flex flex-col divide-y divide-border text-sm">
         {rows.map((row) => (
           <div key={row.label} className="flex items-baseline justify-between gap-6 py-2">

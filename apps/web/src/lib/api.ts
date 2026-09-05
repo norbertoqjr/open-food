@@ -3,7 +3,7 @@ import type {
   CurrentUserResponse,
   Locale,
   NutritionInfo,
-  ProductSummary,
+  ProductDetail,
   RecentSearchItem,
   SearchResult,
   SubscriptionStatusResponse,
@@ -61,9 +61,9 @@ export function searchProducts(
   return apiFetch<SearchResult>(`/products/search?${params.toString()}`);
 }
 
-export function getProduct(id: string, locale: Locale): Promise<ProductSummary> {
+export function getProduct(id: string, locale: Locale): Promise<ProductDetail> {
   const params = new URLSearchParams({ locale });
-  return apiFetch<ProductSummary>(`/products/${encodeURIComponent(id)}?${params.toString()}`);
+  return apiFetch<ProductDetail>(`/products/${encodeURIComponent(id)}?${params.toString()}`);
 }
 
 export function getRecentSearches(): Promise<RecentSearchItem[]> {

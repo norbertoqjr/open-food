@@ -1,6 +1,6 @@
 'use client';
 
-import type { NutritionInfo, ProductSummary } from '@open-food/shared';
+import type { NutritionInfo, ProductDetail } from '@open-food/shared';
 import { ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -9,6 +9,7 @@ import {
   Suspense, use, useEffect, useState,
 } from 'react';
 import { NutritionPanel } from '@/components/nutrition-panel';
+import { ProductDetails } from '@/components/product-details';
 import { SubscribePrompt } from '@/components/subscribe-prompt';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLocale } from '@/lib/locale-context';
@@ -19,7 +20,7 @@ import {
 type ProductState = { status: 'loading' }
   | { status: 'not-found' }
   | { status: 'error'; message: string }
-  | { status: 'success'; product: ProductSummary };
+  | { status: 'success'; product: ProductDetail };
 
 type NutritionState = { status: 'checking' }
   | { status: 'locked' }
@@ -193,7 +194,12 @@ function ProductView({ params }: PageProps<'/products/[id]'>) {
               {product.name ?? t.unnamedProduct}
             </h2>
             <p className="text-sm text-muted-foreground">{product.brand ?? t.unknownBrand}</p>
+            {product.genericName ? (
+              <p className="text-sm text-muted-foreground">{product.genericName}</p>
+            ) : null}
           </div>
+
+          <ProductDetails product={product} />
 
           {nutritionState.status === 'locked' ? <SubscribePrompt /> : null}
           {nutritionState.status === 'unavailable' ? (

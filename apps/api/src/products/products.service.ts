@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type {
-  Locale, NutritionInfo, ProductSummary, SearchQuery, SearchResult,
+  Locale, NutritionInfo, ProductDetail, SearchQuery, SearchResult,
 } from '@open-food/shared';
 import { OpenFoodFactsService } from '../open-food-facts/open-food-facts.service.js';
 import { RecentSearchesService } from '../recent-searches/recent-searches.service.js';
@@ -27,7 +27,7 @@ export class ProductsService {
     };
   }
 
-  async getProduct(id: string, locale: Locale): Promise<ProductSummary> {
+  async getProduct(id: string, locale: Locale): Promise<ProductDetail> {
     const product = await this.openFoodFacts.getProduct(id, locale);
 
     if (!product) {

@@ -8,6 +8,27 @@ export interface ProductSummary {
   imageUrl: string | null;
 }
 
+// Everything the product page shows beyond the search-result fields. Kept
+// free of nutrition data: nutriments and the Nutri-Score derived from them
+// are subscriber-only and travel on NutritionInfo instead.
+//
+// Tag lists (allergens, categories, labels, countries) are Open Food Facts'
+// canonical English taxonomy values, humanised from e.g. "en:palm-oil-free".
+// Upstream has no translation for them, so they are not localised; the
+// labels around them are.
+export interface ProductDetail extends ProductSummary {
+  genericName: string | null;
+  quantity: string | null;
+  servingSize: string | null;
+  ingredientsText: string | null;
+  allergens: string[];
+  categories: string[];
+  labels: string[];
+  countries: string[];
+  novaGroup: number | null;
+  ecoScore: string | null;
+}
+
 export interface SearchResult {
   items: ProductSummary[];
   page: number;
