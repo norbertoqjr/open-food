@@ -98,12 +98,15 @@ The success redirect itself grants nothing — only a verified webhook does — 
 
 Stripe cannot reach `localhost`, so webhook events only arrive if the CLI is running to tunnel them in. **Without it, checkout succeeds and payment is taken, but the app never learns about it and nutrition stays locked** — the most likely cause if a real payment appears to have no effect.
 
-Install it whichever way suits the machine:
+It is already a devDependency of `apps/api`, so `npm install` puts it in the repo and `npx stripe …` works with no further setup. To type `stripe` instead of `npx stripe`, either install it globally or put the local one on your `PATH`:
 
 ```bash
-npm install -g @stripe/cli     # any platform; matches this repo's toolchain
-brew install stripe            # macOS
+npm install -g @stripe/cli                      # global; needs sudo if the npm prefix is root-owned
+brew install stripe                             # macOS
+ln -sf "$PWD/node_modules/@stripe/cli/bin/shim.js" ~/.local/bin/stripe   # no sudo; repo-local
 ```
+
+The symlink resolves through this checkout, so it stops working if the repo moves or `node_modules` is removed — prefer a global install for a machine you use across projects.
 
 <details>
 <summary>Debian / Ubuntu via apt</summary>
@@ -120,11 +123,13 @@ sudo apt update && sudo apt install stripe
 
 Other platforms, and prebuilt binaries, are listed in the [Stripe CLI readme](https://github.com/stripe/stripe-cli#installation).
 
-Then authenticate once (opens a browser to pair with your Stripe account) and start the listener:
+Then start the listener. `stripe login` pairs the CLI with your account via the browser, but is optional here — passing the secret key you already put in `apps/api/.env` avoids it, and keeps the signing secret stable across restarts:
 
 ```bash
-stripe login
+stripe login                                    # optional, interactive
 stripe listen --forward-to localhost:4000/billing/webhook
+# or, without logging in:
+stripe listen --api-key sk_test_… --forward-to localhost:4000/billing/webhook
 ```
 
 Leave that running in its own terminal for as long as you are testing. It prints a webhook signing secret on startup:
