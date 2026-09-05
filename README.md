@@ -109,12 +109,23 @@ Checkout can be started from three places, all sharing one `useCheckout` hook: t
 
 A labelled selector in the header switches between English, Dutch, German, and French, persisting the choice to `localStorage`. It is in the header rather than on the search page so the language can also be changed while reading a product. Options are endonyms — English, Nederlands, Deutsch, Français — so someone who has landed on a language they cannot read can still find their own.
 
-Changing it re-issues the active search and any open product page against the API with the new `locale`, so **product data updates, not just interface labels**. Names, generic names, and ingredient lists each resolve through the requested locale first, then the submitter's own text, then English, and finally `null` — at which point the UI shows its own translated "unavailable" label rather than a fabricated translation. Numbers and dates are formatted with `Intl` against the active locale.
+Changing it re-issues the active search and any open product page against the API with the new `locale`, so **product data updates, not just interface labels**. Numbers and dates are formatted with `Intl` against the active locale.
+
+Open Food Facts stores text both in language-tagged fields (`ingredients_text_de`) and in an untagged one (`ingredients_text`). The untagged field is **not** reliably the submitter's language: on real records it is a dump of everything printed on the packaging — one product carries German and Bulgarian in the same field while declaring `lang=en`. Resolution therefore treats tagged and untagged fields differently:
+
+| | Order |
+| --- | --- |
+| **Prose** — ingredients, generic name | requested locale → tagged English → **nothing** |
+| **Name** — an identifier | requested locale → tagged English → untagged → nothing |
+
+Prose refuses the untagged field because a description in a language the reader cannot parse is noise, and an ingredient list is where allergens are declared — an explicit "unavailable" is safer than text nobody can read. A name keeps it as a last resort, since showing the wrong language still identifies the product better than "Unnamed product". Nothing is ever machine-translated.
+
+**Tag lists are translated through a second endpoint.** Product responses only ever carry canonical English tag ids (`en:rolled-oats`), whatever locale is requested, so allergens, categories, labels and countries stayed English at first. The translations do exist — behind Open Food Facts' taxonomy endpoint, one request per tag type — so `TaxonomyService` resolves them and memoises the result for the life of the process, since the taxonomy is static reference data. A tag with no translation, or a taxonomy outage, falls back to the humanised canonical name: the language of a label degrades, never the page.
 
 Two honest limits:
 
-- **Tag lists are not translated.** Allergens, categories, labels, and countries come from Open Food Facts' canonical English taxonomy (`en:palm-oil-free` → "Palm oil free"); upstream offers no translation for them, and inventing one would be worse than showing the canonical value. The labels around them are translated.
-- **English is a fallback rung, never the first choice.** When a product has no text in the selected language, the submitter's original is preferred over English, because `product_name_en` is sometimes wrong — a real Open Food Facts record returns `"blueberry jam"` as the English name for Nutella, and that case is pinned in the tests. The consequence is that a French reader may see a Hungarian description on a Hungarian product even when an English one exists.
+- **A cold cache costs extra requests.** The first product view issues up to four taxonomy lookups in parallel; subsequent views for the same tags are served from memory. The cache is per-process, so it starts empty on every restart.
+- **Upstream language tags are sometimes simply wrong**, and that is not detectable from here. One record files a French name under `product_name_en`, another files German text under `generic_name_en`; a real product returns `"blueberry jam"` as the English name for Nutella, a case pinned in the tests. Honouring the tag is the best available signal — the alternative is guessing at the language of free text, which would be worse.
 
 ## Stripe test-mode setup
 
@@ -211,7 +222,7 @@ Two smaller things worth naming:
 - **No subscription management.** Cancelling or changing a plan happens in the Stripe dashboard; the app reflects the change when the resulting webhook arrives, but offers no billing portal of its own.
 - One shared demo user, with no registration or full authentication flow.
 - A single monthly subscription price, with no tiers.
-- **Tag lists are shown in Open Food Facts' canonical English**, since upstream has no translations for them (see [Internationalization](#internationalization)).
+- **Taxonomy translations are cached in memory only**, so they are re-fetched after every API restart and are not shared between instances (see [Internationalization](#internationalization)).
 - Recent searches are stored but not otherwise used — there is no history page, and the list is capped at the ten most recent.
 - Open Food Facts remains the only product source; there is no catalog import or machine translation of product data.
 - Deployment is out of scope.
