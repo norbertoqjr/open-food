@@ -7,6 +7,7 @@ export const en = {
   searchLabel: 'Search packaged foods',
   searchPlaceholder: 'e.g. nutella',
   searchButton: 'Search',
+  clearSearch: 'Clear search',
   searchingButton: 'Searching…',
   searchRequiredError: 'Enter a search term.',
   searchIdleHint: 'Search by product name or brand to see results here.',

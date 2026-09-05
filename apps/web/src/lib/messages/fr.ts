@@ -6,6 +6,7 @@ export const fr = {
   searchLabel: 'Rechercher des aliments emballés',
   searchPlaceholder: 'p. ex. nutella',
   searchButton: 'Rechercher',
+  clearSearch: 'Effacer la recherche',
   searchingButton: 'Recherche…',
   searchRequiredError: 'Saisissez un terme de recherche.',
   searchIdleHint: 'Recherchez par nom de produit ou marque pour voir les résultats ici.',

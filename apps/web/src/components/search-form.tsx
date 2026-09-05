@@ -2,8 +2,9 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { searchFormSchema, type SearchFormValues } from '@open-food/shared';
+import { X } from 'lucide-react';
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,6 +25,8 @@ export function SearchForm({ query, onSearch, isSearching }: SearchFormProps) {
     register,
     handleSubmit,
     reset,
+    setFocus,
+    control,
     formState: { errors },
   } = useForm<SearchFormValues>({
     resolver: zodResolver(searchFormSchema),
@@ -33,6 +36,22 @@ export function SearchForm({ query, onSearch, isSearching }: SearchFormProps) {
   useEffect(() => {
     reset({ query });
   }, [query, reset]);
+
+  // useWatch rather than watch(): the latter returns a new function each
+  // render and cannot be memoized safely.
+  const hasText = Boolean(useWatch({ control, name: 'query' }));
+
+  // Clears the results too, not just the field: leaving results for a query
+  // the box no longer shows would be confusing. onSearch('') drops the ?q=
+  // parameter, which returns the page to its idle state.
+  const handleClear = () => {
+    reset({ query: '' });
+    onSearch('');
+    // onSearch rewrites the URL, and the resulting re-render drops focus, so
+    // it is restored on the next frame rather than in this one. Someone who
+    // clears the box almost always wants to type again.
+    requestAnimationFrame(() => setFocus('query'));
+  };
 
   return (
     <form
@@ -44,14 +63,30 @@ export function SearchForm({ query, onSearch, isSearching }: SearchFormProps) {
         {t.searchLabel}
       </Label>
       <div className="flex gap-2">
-        <Input
-          id="search-query"
-          placeholder={t.searchPlaceholder}
-          autoComplete="off"
-          aria-invalid={Boolean(errors.query)}
-          className="h-10 flex-1 rounded-lg"
-          {...register('query')}
-        />
+        <div className="relative flex-1">
+          <Input
+            id="search-query"
+            placeholder={t.searchPlaceholder}
+            autoComplete="off"
+            aria-invalid={Boolean(errors.query)}
+            className="h-10 w-full rounded-lg pr-9"
+            {...register('query')}
+          />
+          {hasText ? (
+            <button
+              type="button"
+              onClick={handleClear}
+              aria-label={t.clearSearch}
+              className={[
+                'absolute inset-y-0 right-0 grid w-9 cursor-pointer place-items-center',
+                'rounded-r-lg text-muted-foreground outline-none transition-colors',
+                'hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50',
+              ].join(' ')}
+            >
+              <X className="size-4" aria-hidden />
+            </button>
+          ) : null}
+        </div>
         <Button type="submit" size="lg" disabled={isSearching} className="h-10 px-5">
           {isSearching ? t.searchingButton : t.searchButton}
         </Button>

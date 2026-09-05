@@ -6,6 +6,7 @@ export const de = {
   searchLabel: 'Verpackte Lebensmittel suchen',
   searchPlaceholder: 'z. B. nutella',
   searchButton: 'Suchen',
+  clearSearch: 'Suche zurücksetzen',
   searchingButton: 'Suche läuft…',
   searchRequiredError: 'Geben Sie einen Suchbegriff ein.',
   searchIdleHint: 'Suchen Sie nach Produktname oder Marke, um hier Ergebnisse zu sehen.',

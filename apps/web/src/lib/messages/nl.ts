@@ -6,6 +6,7 @@ export const nl = {
   searchLabel: 'Zoek verpakte levensmiddelen',
   searchPlaceholder: 'bijv. nutella',
   searchButton: 'Zoeken',
+  clearSearch: 'Zoekopdracht wissen',
   searchingButton: 'Zoeken…',
   searchRequiredError: 'Voer een zoekterm in.',
   searchIdleHint: 'Zoek op productnaam of merk om hier resultaten te zien.',
