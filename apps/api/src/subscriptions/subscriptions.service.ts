@@ -21,6 +21,15 @@ function toSubscriptionStatus(status: string): SubscriptionStatus | null {
   return KNOWN_STATUSES.has(status) ? (status as SubscriptionStatus) : null;
 }
 
+// Prisma's unique-constraint violation. Reading it off the shape rather than
+// importing the error class keeps this independent of the generated client's
+// runtime export surface.
+function isUniqueConstraintViolation(error: unknown): boolean {
+  return typeof error === 'object'
+    && error !== null
+    && (error as { code?: string }).code === 'P2002';
+}
+
 @Injectable()
 export class SubscriptionsService {
   private readonly logger = new Logger(SubscriptionsService.name);
@@ -64,9 +73,22 @@ export class SubscriptionsService {
       this.logger.log(`Unhandled Stripe event type: ${event.type}`);
     }
 
-    await this.prisma.processedStripeEvent.create({
-      data: { id: event.id, type: event.type },
-    });
+    try {
+      await this.prisma.processedStripeEvent.create({
+        data: { id: event.id, type: event.type },
+      });
+    } catch (error) {
+      // The check above and this insert are not atomic, so two concurrent
+      // deliveries of the same event can both get past it and race here.
+      // Losing that race means the event is processed, which is the outcome
+      // we wanted -- reporting a 500 would only make Stripe redeliver it.
+      // Applying a subscription event twice is already safe: the staleness
+      // guard makes the second one a no-op.
+      if (!isUniqueConstraintViolation(error)) {
+        throw error;
+      }
+      this.logger.log(`Event ${event.id} was recorded concurrently; treating as processed`);
+    }
   }
 
   private async applySubscriptionEvent(event: Stripe.Event): Promise<void> {

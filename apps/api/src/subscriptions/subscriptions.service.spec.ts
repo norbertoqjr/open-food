@@ -75,6 +75,29 @@ describe('SubscriptionsService.handleWebhookEvent', () => {
     expect(prisma.processedStripeEvent.create).not.toHaveBeenCalled();
   });
 
+  it('swallows the race when the same event is recorded concurrently', async () => {
+    // Two simultaneous deliveries of one event both clear the findUnique
+    // check; the loser hits the unique constraint on ProcessedStripeEvent.
+    // That must not surface as a 500, or Stripe would redeliver an event
+    // that was in fact handled.
+    const prisma = buildPrismaMock();
+    prisma.processedStripeEvent.create = vi.fn().mockRejectedValue(
+      Object.assign(new Error('Unique constraint failed'), { code: 'P2002' }),
+    );
+    const service = new SubscriptionsService(prisma);
+
+    await expect(service.handleWebhookEvent(buildSubscriptionEvent())).resolves.toBeUndefined();
+  });
+
+  it('still surfaces an unexpected failure while recording an event', async () => {
+    const prisma = buildPrismaMock();
+    prisma.processedStripeEvent.create = vi.fn().mockRejectedValue(new Error('database is down'));
+    const service = new SubscriptionsService(prisma);
+
+    await expect(service.handleWebhookEvent(buildSubscriptionEvent()))
+      .rejects.toThrow('database is down');
+  });
+
   it('ignores an event older than the last one already applied', async () => {
     const prisma = buildPrismaMock();
     prisma.subscription.findUnique = vi.fn().mockResolvedValue({
